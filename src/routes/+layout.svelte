@@ -1,16 +1,20 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
+	import MenuBar from '$lib/components/MenuBar.svelte';
+	import "$lib/styles/global.css"
 
 	let { children } = $props();
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
+
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+	<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
 </svelte:head>
 
-<div class="header">
-	Hi
-</div>
+<MenuBar />
 
 {@render children?.()}
 
@@ -18,16 +22,5 @@
 	:global(body) {
 		position: relative;
 		margin: 0;
-	}
-
-	.header {
-		position: sticky;
-		top: 0;
-		z-index: 10;
-		width: 100%;
-		height: 72px;
-		background-color: hsla(0, 0%, 95%, 0.3);
-		box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
-		backdrop-filter: blur(12px);
 	}
 </style>
