@@ -11,6 +11,6 @@
     .info-section {
         width: 100%;
         box-sizing: border-box;
-        padding: 40px 80px;
+        padding: 50px 200px;
     }
 </style>
