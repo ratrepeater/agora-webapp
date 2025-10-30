@@ -1,4 +1,4 @@
-<div class="navbar bg-base-100/50 backdrop-blur-md shadow-md fixed">
+<div class="navbar bg-base-100/50 backdrop-blur-md shadow-md sticky top-0 z-50">
     <div class="navbar-start">
         <a href="/" class="btn btn-ghost text-xl">AGORA</a>
         <details class="dropdown">
