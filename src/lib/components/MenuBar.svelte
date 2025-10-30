@@ -1,4 +1,4 @@
-<div class="navbar bg-base-100 shadow-sm fixed">
+<div class="navbar bg-base-100/50 backdrop-blur-md shadow-md fixed">
     <div class="flex-1">
         <a href="/" class="btn btn-ghost text-xl">AGORA</a>
     </div>
