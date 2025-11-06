@@ -1,6 +1,13 @@
+<script lang="ts">
+    import favicon from '$lib/assets/favicon.svg';
+</script>
+
 <div class="navbar bg-base-100/50 backdrop-blur-md shadow-md sticky top-0 z-50">
-    <div class="navbar-start">
-        <a href="/" class="btn btn-ghost text-xl">AGORA</a>
+    <div class="inline-flex justify-start">
+        <a href="/" class="btn btn-ghost text-xl mr-3">
+            <img src={favicon} alt="AGORA" class="h-8 w-8" />
+            AGORA
+        </a>
         <details class="dropdown">
             <summary class="btn btn-ghost">Departments</summary>
             <ul class="menu xl:menu-horizontal bg-base-200 rounded-box lg:min-w-max fixed shadow-sm">
@@ -25,8 +32,8 @@
             </ul>
         </details>
     </div>
-    <div class="navbar-center">
-        <label class="input w-lg">
+    <div class="inline-flex grow-5 ml-5 mr-5">
+        <label class="input w-full">
             <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <g
                 stroke-linejoin="round"
@@ -42,7 +49,7 @@
             <input type="search" class="grow" placeholder="Search software by name, category, or industry" />
         </label>
     </div>
-    <div class="navbar-end">
+    <div class="inline-flex justify-end">
         <button class="btn btn-ghost">
             Request Invite
         </button>
