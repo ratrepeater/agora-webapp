@@ -16,9 +16,7 @@
 
 <MenuBar />
 
-<div class="container mx-auto m-7.5">
-	{@render children?.()}
-</div>
+{@render children?.()}
 
 <style>
 	:global(body) {

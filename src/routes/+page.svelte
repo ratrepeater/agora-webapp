@@ -1,17 +1,17 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
-    import PageBanner from '$lib/components/PageBanner.svelte';
     import InfoSection from '$lib/components/InfoSection.svelte';
+    import ListingCard from '$lib/components/ListingCard.svelte';
 </script>
 
-<div class="indicator">
-    <span class="indicator-item badge badge-success">New</span>
-    <div class="card bg-base-100 shadow-sm w-96">
-        <div class="card-body">
-            <h2 class="card-title">SalesEngine AI</h2>
-            <p>AI powered sales engagement platform</p>
-            <div class="divider"></div>
-
-        </div>
-    </div>
-</div>
+<InfoSection>
+    <ListingCard data={{
+        uid: "123",
+        created_at: "2023-07-01T00:00:00.000Z",
+        creator_id: "123",
+        title: "Agora",
+        description: "Agora is a decentralized platform for software developers to build and monetize their own software products.",
+        tags: ["Agora", "Decentralized", "Software", "Developer", "Product", "Monetization"],
+        public: true
+    }}/>
+</InfoSection>

@@ -1,16 +1,7 @@
 <script lang="ts">
-    import { goto } from '$app/navigation';
     let { children } = $props();
 </script>
 
-<div class="info-section">
+<div class="container mx-auto m-7.5">
     {@render children?.()}
 </div>
-
-<style>
-    .info-section {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 50px 200px;
-    }
-</style>
