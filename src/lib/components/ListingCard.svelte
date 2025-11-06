@@ -13,7 +13,7 @@
     })
 </script>
 
-<div class="indicator">
+<div class="indicator m-5">
     {#if isNew}
         <span class="indicator-item badge badge-success">New</span>
     {/if}

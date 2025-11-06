@@ -6,7 +6,7 @@
     import type { ListingInfo } from '$lib/helpers/types';
 
 
-    let listings : ListingInfo[] = [];
+    let listings : ListingInfo[] = $state([]);
 
     onMount(() => {
         // TODO: abstract away API calls
@@ -18,7 +18,7 @@
     });
 </script>
 
-<InfoSection>
+<InfoSection class="whitespace-nowrap overflow-x-scroll">
     {#each listings as data}
         <ListingCard data={data} />
     {/each}
