@@ -18,6 +18,9 @@
     });
 </script>
 
+<InfoSection>
+    <h1 class="text-5xl text-center">The marketplace for software-based businesses</h1>
+</InfoSection>
 <InfoSection class="whitespace-nowrap overflow-x-scroll">
     {#each listings as data}
         <ListingCard data={data} />
