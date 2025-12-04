@@ -70,6 +70,27 @@ export type Database = {
             foreignKeyName: "bookmarks_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "hr_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookmarks_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "legal_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookmarks_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookmarks_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -110,6 +131,27 @@ export type Database = {
             columns: ["buyer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "hr_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "legal_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products_full"
             referencedColumns: ["id"]
           },
           {
@@ -159,6 +201,27 @@ export type Database = {
             foreignKeyName: "comparison_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "hr_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comparison_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "legal_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comparison_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comparison_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -166,6 +229,153 @@ export type Database = {
             foreignKeyName: "comparison_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "products_with_ratings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_metrics: {
+        Row: {
+          compliance_tasks_automated_count: number | null
+          created_at: string | null
+          employee_record_completeness_percentage: number | null
+          id: string
+          onboarding_time_days: number | null
+          payroll_error_rate_percentage: number | null
+          product_id: string
+          time_to_fill_days: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          compliance_tasks_automated_count?: number | null
+          created_at?: string | null
+          employee_record_completeness_percentage?: number | null
+          id?: string
+          onboarding_time_days?: number | null
+          payroll_error_rate_percentage?: number | null
+          product_id: string
+          time_to_fill_days?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          compliance_tasks_automated_count?: number | null
+          created_at?: string | null
+          employee_record_completeness_percentage?: number | null
+          id?: string
+          onboarding_time_days?: number | null
+          payroll_error_rate_percentage?: number | null
+          product_id?: string
+          time_to_fill_days?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "hr_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "legal_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "marketing_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products_with_ratings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_metrics: {
+        Row: {
+          contract_cycle_time_days: number | null
+          created_at: string | null
+          id: string
+          product_id: string
+          redlines_per_contract_avg: number | null
+          risk_flag_detection_rate_percentage: number | null
+          template_reuse_rate_percentage: number | null
+          updated_at: string | null
+          version_count_avg: number | null
+          workflow_automation_steps_count: number | null
+        }
+        Insert: {
+          contract_cycle_time_days?: number | null
+          created_at?: string | null
+          id?: string
+          product_id: string
+          redlines_per_contract_avg?: number | null
+          risk_flag_detection_rate_percentage?: number | null
+          template_reuse_rate_percentage?: number | null
+          updated_at?: string | null
+          version_count_avg?: number | null
+          workflow_automation_steps_count?: number | null
+        }
+        Update: {
+          contract_cycle_time_days?: number | null
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          redlines_per_contract_avg?: number | null
+          risk_flag_detection_rate_percentage?: number | null
+          template_reuse_rate_percentage?: number | null
+          updated_at?: string | null
+          version_count_avg?: number | null
+          workflow_automation_steps_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "hr_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "legal_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "marketing_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
             referencedRelation: "products_with_ratings"
             referencedColumns: ["id"]
           },
@@ -201,6 +411,81 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_metrics: {
+        Row: {
+          attribution_accuracy_error_percentage: number | null
+          audience_match_rate_percentage: number | null
+          conversion_lift_percentage: number | null
+          created_at: string | null
+          email_deliverability_percentage: number | null
+          engagement_rate_percentage: number | null
+          id: string
+          lead_cost_usd: number | null
+          product_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          attribution_accuracy_error_percentage?: number | null
+          audience_match_rate_percentage?: number | null
+          conversion_lift_percentage?: number | null
+          created_at?: string | null
+          email_deliverability_percentage?: number | null
+          engagement_rate_percentage?: number | null
+          id?: string
+          lead_cost_usd?: number | null
+          product_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          attribution_accuracy_error_percentage?: number | null
+          audience_match_rate_percentage?: number | null
+          conversion_lift_percentage?: number | null
+          created_at?: string | null
+          email_deliverability_percentage?: number | null
+          engagement_rate_percentage?: number | null
+          id?: string
+          lead_cost_usd?: number | null
+          product_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "hr_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "legal_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "marketing_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products_with_ratings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string | null
@@ -235,6 +520,27 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "hr_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "legal_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products_full"
             referencedColumns: ["id"]
           },
           {
@@ -429,6 +735,27 @@ export type Database = {
             foreignKeyName: "reviews_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "hr_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "legal_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_products_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -464,6 +791,131 @@ export type Database = {
       }
     }
     Views: {
+      hr_products_full: {
+        Row: {
+          access_depth: string | null
+          average_rating: number | null
+          category: Database["public"]["Enums"]["product_category"] | null
+          cloud_client_classification:
+            | Database["public"]["Enums"]["cloud_client_type"]
+            | null
+          compliance_tasks_automated_count: number | null
+          created_at: string | null
+          demo_visual_url: string | null
+          employee_record_completeness_percentage: number | null
+          id: string | null
+          implementation_time_days: number | null
+          is_featured: boolean | null
+          is_new: boolean | null
+          logo_url: string | null
+          long_description: string | null
+          name: string | null
+          onboarding_time_days: number | null
+          payroll_error_rate_percentage: number | null
+          price: number | null
+          quarter_over_quarter_change: number | null
+          retention_rate: number | null
+          review_count: number | null
+          roi_percentage: number | null
+          seller_id: string | null
+          short_description: string | null
+          time_to_fill_days: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_products_full: {
+        Row: {
+          access_depth: string | null
+          average_rating: number | null
+          category: Database["public"]["Enums"]["product_category"] | null
+          cloud_client_classification:
+            | Database["public"]["Enums"]["cloud_client_type"]
+            | null
+          contract_cycle_time_days: number | null
+          created_at: string | null
+          demo_visual_url: string | null
+          id: string | null
+          implementation_time_days: number | null
+          is_featured: boolean | null
+          is_new: boolean | null
+          logo_url: string | null
+          long_description: string | null
+          name: string | null
+          price: number | null
+          quarter_over_quarter_change: number | null
+          redlines_per_contract_avg: number | null
+          retention_rate: number | null
+          review_count: number | null
+          risk_flag_detection_rate_percentage: number | null
+          roi_percentage: number | null
+          seller_id: string | null
+          short_description: string | null
+          template_reuse_rate_percentage: number | null
+          updated_at: string | null
+          version_count_avg: number | null
+          workflow_automation_steps_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_products_full: {
+        Row: {
+          access_depth: string | null
+          attribution_accuracy_error_percentage: number | null
+          audience_match_rate_percentage: number | null
+          average_rating: number | null
+          category: Database["public"]["Enums"]["product_category"] | null
+          cloud_client_classification:
+            | Database["public"]["Enums"]["cloud_client_type"]
+            | null
+          conversion_lift_percentage: number | null
+          created_at: string | null
+          demo_visual_url: string | null
+          email_deliverability_percentage: number | null
+          engagement_rate_percentage: number | null
+          id: string | null
+          implementation_time_days: number | null
+          is_featured: boolean | null
+          is_new: boolean | null
+          lead_cost_usd: number | null
+          logo_url: string | null
+          long_description: string | null
+          name: string | null
+          price: number | null
+          quarter_over_quarter_change: number | null
+          retention_rate: number | null
+          review_count: number | null
+          roi_percentage: number | null
+          seller_id: string | null
+          short_description: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products_with_ratings: {
         Row: {
           access_depth: string | null
@@ -506,7 +958,7 @@ export type Database = {
     }
     Enums: {
       cloud_client_type: "cloud" | "client" | "hybrid"
-      product_category: "HR" | "Law" | "Office"
+      product_category: "HR" | "Law" | "Office" | "Marketing"
       user_role: "buyer" | "seller"
     }
     CompositeTypes: {
@@ -639,7 +1091,7 @@ export const Constants = {
   public: {
     Enums: {
       cloud_client_type: ["cloud", "client", "hybrid"],
-      product_category: ["HR", "Law", "Office"],
+      product_category: ["HR", "Law", "Office", "Marketing"],
       user_role: ["buyer", "seller"],
     },
   },
