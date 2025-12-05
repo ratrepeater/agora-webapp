@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Startup Marketplace is a web-based platform where startups can discover, compare, and purchase business services such as HR, legal, and office space. The platform combines Amazon's marketplace layout with Netflix-style content discovery, featuring business metrics on product cards and a comparison tool for evaluating up to 3 products side-by-side. The system supports both buyer and seller experiences, with buyers able to browse, search, bookmark, and purchase services, while sellers can list their products with detailed metrics and descriptions.
+The Startup Marketplace is a web-based platform where startups can discover, compare, and purchase business services such as HR, legal, and office space. The platform combines Amazon's marketplace layout with Netflix-style content discovery, featuring business metrics on product cards and a comparison tool for evaluating up to 3 products side-by-side. The system supports both buyer and seller experiences, with buyers able to browse, search, bookmark, purchase services, manage purchased products, and track performance. Sellers can list products, access analytics, view competitor insights, and manage their offerings. The platform enables on-site transactions, automated quoting, product downloads, and basic bundling capabilities. All data is persisted in Supabase Database. The system is designed to accommodate future enhancements including company-specific tool integration, AI-powered product evaluation, smart bundling with integration analysis, and advanced search algorithms.
 
 ## Glossary
 
@@ -17,6 +17,14 @@ The Startup Marketplace is a web-based platform where startups can discover, com
 - **Business Metrics**: Quantitative data about a product (ROI, retention, implementation time, etc.)
 - **Category**: A classification of products (HR, Law, Office)
 - **Demo Transaction**: A zero-charge purchase simulation for demonstration purposes
+- **Supabase Database**: The PostgreSQL database system used for persistent storage of all marketplace data
+- **Product Management Dashboard**: An interface for buyers to track purchased products and their performance
+- **Analytics Dashboard**: An interface for sellers to view product performance and market insights
+- **Competitor Analysis**: A feature showing sellers their main competitors and comparative metrics
+- **Quote Request**: A buyer-initiated request for automated pricing based on specific requirements
+- **Bundle**: A collection of complementary products purchased together
+- **Download**: The action of retrieving a digital product file after purchase
+- **Usage Metrics**: Data tracking how buyers utilize purchased products
 
 ## Requirements
 
@@ -26,10 +34,10 @@ The Startup Marketplace is a web-based platform where startups can discover, com
 
 #### Acceptance Criteria
 
-1. WHEN a buyer visits the homepage THEN the Marketplace System SHALL display horizontally scrolling product rows organized by categories such as "new products" and "featured"
-2. WHEN a buyer views a product row THEN the Marketplace System SHALL display product cards with company demo visuals, name, logo, short description, price, and key metrics
-3. WHEN a buyer scrolls horizontally within a row THEN the Marketplace System SHALL load and display additional products smoothly without page refresh
-4. WHEN a buyer clicks on a product card THEN the Marketplace System SHALL navigate to the product detail page
+1. WHEN a buyer visits the homepage, THE Marketplace System SHALL display horizontally scrolling product rows organized by categories such as "new products" and "featured"
+2. WHEN a buyer views a product row, THE Marketplace System SHALL display product cards with company demo visuals, name, logo, short description, price, and key metrics
+3. WHEN a buyer scrolls horizontally within a row, THE Marketplace System SHALL load and display additional products smoothly without page refresh
+4. WHEN a buyer clicks on a product card, THE Marketplace System SHALL navigate to the product detail page
 
 ### Requirement 2
 
@@ -37,10 +45,10 @@ The Startup Marketplace is a web-based platform where startups can discover, com
 
 #### Acceptance Criteria
 
-1. WHEN a buyer visits the marketplace page THEN the Marketplace System SHALL display all products in a grid layout with category filter options for HR, Law, and Office
-2. WHEN a buyer selects a category filter THEN the Marketplace System SHALL display only products matching the selected category
-3. WHEN a buyer clears category filters THEN the Marketplace System SHALL display all products again
-4. WHEN a buyer views products in the marketplace THEN the Marketplace System SHALL display each product card with company demo visual, name, logo, short description, price, key metrics, compare button, and bookmark button
+1. WHEN a buyer visits the marketplace page, THE Marketplace System SHALL display all products in a grid layout with category filter options for HR, Law, and Office
+2. WHEN a buyer selects a category filter, THE Marketplace System SHALL display only products matching the selected category
+3. WHEN a buyer clears category filters, THE Marketplace System SHALL display all products again
+4. WHEN a buyer views products in the marketplace, THE Marketplace System SHALL display each product card with company demo visual, name, logo, short description, price, key metrics, compare button, and bookmark button
 
 ### Requirement 3
 
@@ -48,10 +56,10 @@ The Startup Marketplace is a web-based platform where startups can discover, com
 
 #### Acceptance Criteria
 
-1. WHEN a buyer enters a search query THEN the Marketplace System SHALL return products matching the query in name, description, or category
-2. WHEN a buyer applies filters to search results THEN the Marketplace System SHALL display only products matching both the search query and selected filters
-3. WHEN a buyer clears the search query THEN the Marketplace System SHALL display all products or previously filtered results
-4. WHEN no products match the search criteria THEN the Marketplace System SHALL display a message indicating no results found
+1. WHEN a buyer enters a search query, THE Marketplace System SHALL return products matching the query in name, description, or category
+2. WHEN a buyer applies filters to search results, THE Marketplace System SHALL display only products matching both the search query and selected filters
+3. WHEN a buyer clears the search query, THE Marketplace System SHALL display all products or previously filtered results
+4. WHEN no products match the search criteria, THE Marketplace System SHALL display a message indicating no results found
 
 ### Requirement 4
 
@@ -59,10 +67,10 @@ The Startup Marketplace is a web-based platform where startups can discover, com
 
 #### Acceptance Criteria
 
-1. WHEN a buyer clicks on a product card THEN the Marketplace System SHALL display the product detail page with name, logo, company demo visual, long description, price, extended metrics with explanations, compare button, bookmark button, and reviews
-2. WHEN a buyer views the product detail page THEN the Marketplace System SHALL display similar products at the bottom of the page
-3. WHEN a buyer clicks on a similar product THEN the Marketplace System SHALL navigate to that product's detail page
-4. WHEN a buyer views extended metrics THEN the Marketplace System SHALL display ROI, retention over time, quarter-over-quarter changes, cloud/client classification, implementation time, and access depth with explanations
+1. WHEN a buyer clicks on a product card, THE Marketplace System SHALL display the product detail page with name, logo, company demo visual, long description, price, extended metrics with explanations, compare button, bookmark button, and reviews
+2. WHEN a buyer views the product detail page, THE Marketplace System SHALL display similar products at the bottom of the page
+3. WHEN a buyer clicks on a similar product, THE Marketplace System SHALL navigate to that product's detail page
+4. WHEN a buyer views extended metrics, THE Marketplace System SHALL display ROI, retention over time, quarter-over-quarter changes, cloud/client classification, implementation time, and access depth with explanations
 
 ### Requirement 5
 
@@ -70,11 +78,11 @@ The Startup Marketplace is a web-based platform where startups can discover, com
 
 #### Acceptance Criteria
 
-1. WHEN a buyer clicks the compare button on a product card THEN the Marketplace System SHALL add the product to the comparison list
-2. WHEN a buyer adds more than 3 products to the comparison list THEN the Marketplace System SHALL prevent the addition and display a message indicating the maximum limit
-3. WHEN a buyer views the comparison page THEN the Marketplace System SHALL display selected products side-by-side with price, all metrics, reviews summary, and demo visuals
-4. WHEN a buyer removes a product from comparison THEN the Marketplace System SHALL update the comparison view to show only remaining products
-5. WHEN a buyer has fewer than 2 products in comparison THEN the Marketplace System SHALL display a message prompting to add more products for meaningful comparison
+1. WHEN a buyer clicks the compare button on a product card, THE Marketplace System SHALL add the product to the comparison list
+2. WHEN a buyer adds more than 3 products to the comparison list, THE Marketplace System SHALL prevent the addition and display a message indicating the maximum limit
+3. WHEN a buyer views the comparison page, THE Marketplace System SHALL display selected products side-by-side with price, all metrics, reviews summary, and demo visuals
+4. WHEN a buyer removes a product from comparison, THE Marketplace System SHALL update the comparison view to show only remaining products
+5. WHEN a buyer has fewer than 2 products in comparison, THE Marketplace System SHALL display a message prompting to add more products for meaningful comparison
 
 ### Requirement 6
 
@@ -82,10 +90,10 @@ The Startup Marketplace is a web-based platform where startups can discover, com
 
 #### Acceptance Criteria
 
-1. WHEN a buyer clicks the bookmark button on a product card THEN the Marketplace System SHALL add the product to the buyer's bookmark list
-2. WHEN a buyer clicks the bookmark button on an already bookmarked product THEN the Marketplace System SHALL remove the product from the bookmark list
-3. WHEN a buyer views their bookmarks THEN the Marketplace System SHALL display all bookmarked products with the same information as marketplace product cards
-4. WHEN a buyer removes a bookmark THEN the Marketplace System SHALL update the bookmark list immediately
+1. WHEN a buyer clicks the bookmark button on a product card, THE Marketplace System SHALL add the product to the buyer's bookmark list
+2. WHEN a buyer clicks the bookmark button on an already bookmarked product, THE Marketplace System SHALL remove the product from the bookmark list
+3. WHEN a buyer views their bookmarks, THE Marketplace System SHALL display all bookmarked products with the same information as marketplace product cards
+4. WHEN a buyer removes a bookmark, THE Marketplace System SHALL update the bookmark list immediately
 
 ### Requirement 7
 
@@ -93,11 +101,11 @@ The Startup Marketplace is a web-based platform where startups can discover, com
 
 #### Acceptance Criteria
 
-1. WHEN a buyer clicks the add to cart button on a product card THEN the Marketplace System SHALL add the product to the buyer's cart
-2. WHEN a buyer views the cart THEN the Marketplace System SHALL display all cart items with name, price, and total cost
-3. WHEN a buyer removes an item from the cart THEN the Marketplace System SHALL update the cart total immediately
-4. WHEN a buyer completes checkout THEN the Marketplace System SHALL process a zero-charge demo transaction and display a confirmation message
-5. WHEN a buyer completes checkout THEN the Marketplace System SHALL add the order to the buyer's order history
+1. WHEN a buyer clicks the add to cart button on a product card, THE Marketplace System SHALL add the product to the buyer's cart
+2. WHEN a buyer views the cart, THE Marketplace System SHALL display all cart items with name, price, and total cost
+3. WHEN a buyer removes an item from the cart, THE Marketplace System SHALL update the cart total immediately
+4. WHEN a buyer completes checkout, THE Marketplace System SHALL process a zero-charge demo transaction and display a confirmation message
+5. WHEN a buyer completes checkout, THE Marketplace System SHALL add the order to the buyer's order history
 
 ### Requirement 8
 
@@ -105,9 +113,9 @@ The Startup Marketplace is a web-based platform where startups can discover, com
 
 #### Acceptance Criteria
 
-1. WHEN a buyer visits the orders page THEN the Marketplace System SHALL display all completed orders with order date, products purchased, and total cost
-2. WHEN a buyer clicks on an order THEN the Marketplace System SHALL display detailed order information including all products and transaction details
-3. WHEN a buyer has no orders THEN the Marketplace System SHALL display a message indicating no orders exist
+1. WHEN a buyer visits the orders page, THE Marketplace System SHALL display all completed orders with order date, products purchased, and total cost
+2. WHEN a buyer clicks on an order, THE Marketplace System SHALL display detailed order information including all products and transaction details
+3. WHEN a buyer has no orders, THE Marketplace System SHALL display a message indicating no orders exist
 
 ### Requirement 9
 
@@ -115,9 +123,9 @@ The Startup Marketplace is a web-based platform where startups can discover, com
 
 #### Acceptance Criteria
 
-1. WHEN a buyer views a product detail page THEN the Marketplace System SHALL display all reviews for that product with reviewer name, rating, and review text
-2. WHEN a buyer views reviews THEN the Marketplace System SHALL display an average rating calculated from all reviews
-3. WHEN a product has no reviews THEN the Marketplace System SHALL display a message indicating no reviews exist
+1. WHEN a buyer views a product detail page, THE Marketplace System SHALL display all reviews for that product with reviewer name, rating, and review text
+2. WHEN a buyer views reviews, THE Marketplace System SHALL display an average rating calculated from all reviews
+3. WHEN a product has no reviews, THE Marketplace System SHALL display a message indicating no reviews exist
 
 ### Requirement 10
 
@@ -125,11 +133,11 @@ The Startup Marketplace is a web-based platform where startups can discover, com
 
 #### Acceptance Criteria
 
-1. WHEN a buyer visits the sign-in page THEN the Marketplace System SHALL display authentication options for buyer accounts
-2. WHEN a buyer provides valid credentials THEN the Marketplace System SHALL authenticate the buyer and maintain the session across pages
-3. WHEN a buyer provides invalid credentials THEN the Marketplace System SHALL display an error message and prevent access
-4. WHEN a buyer signs out THEN the Marketplace System SHALL end the session and clear personalized data from the interface
-5. WHEN an unauthenticated buyer attempts to access bookmarks, cart, or orders THEN the Marketplace System SHALL redirect to the sign-in page
+1. WHEN a buyer visits the sign-in page, THE Marketplace System SHALL display authentication options for buyer accounts
+2. WHEN a buyer provides valid credentials, THE Marketplace System SHALL authenticate the buyer and maintain the session across pages
+3. WHEN a buyer provides invalid credentials, THE Marketplace System SHALL display an error message and prevent access
+4. WHEN a buyer signs out, THE Marketplace System SHALL end the session and clear personalized data from the interface
+5. WHEN an unauthenticated buyer attempts to access bookmarks, cart, or orders, THE Marketplace System SHALL redirect to the sign-in page
 
 ### Requirement 11
 
@@ -137,10 +145,10 @@ The Startup Marketplace is a web-based platform where startups can discover, com
 
 #### Acceptance Criteria
 
-1. WHEN a seller visits the seller sign-in page THEN the Marketplace System SHALL display authentication options for seller accounts
-2. WHEN a seller provides valid credentials THEN the Marketplace System SHALL authenticate the seller and navigate to the seller dashboard
-3. WHEN a seller provides invalid credentials THEN the Marketplace System SHALL display an error message and prevent access
-4. WHEN a seller signs out THEN the Marketplace System SHALL end the session and return to the public homepage
+1. WHEN a seller visits the seller sign-in page, THE Marketplace System SHALL display authentication options for seller accounts
+2. WHEN a seller provides valid credentials, THE Marketplace System SHALL authenticate the seller and navigate to the seller dashboard
+3. WHEN a seller provides invalid credentials, THE Marketplace System SHALL display an error message and prevent access
+4. WHEN a seller signs out, THE Marketplace System SHALL end the session and return to the public homepage
 
 ### Requirement 12
 
@@ -148,11 +156,11 @@ The Startup Marketplace is a web-based platform where startups can discover, com
 
 #### Acceptance Criteria
 
-1. WHEN a seller accesses the add product form THEN the Marketplace System SHALL display input fields for name, logo, demo visual, long description, short description, price, and all business metrics
-2. WHEN a seller submits a complete product form THEN the Marketplace System SHALL create the product and make it visible in the marketplace
-3. WHEN a seller submits an incomplete product form THEN the Marketplace System SHALL display validation errors for missing required fields
-4. WHEN a seller adds a product THEN the Marketplace System SHALL automatically include the product in relevant category bundles and recommendations
-5. WHEN a seller uploads a logo or demo visual THEN the Marketplace System SHALL validate the file format and size before accepting
+1. WHEN a seller accesses the add product form, THE Marketplace System SHALL display input fields for name, logo, demo visual, long description, short description, price, and all business metrics
+2. WHEN a seller submits a complete product form, THE Marketplace System SHALL create the product and make it visible in the marketplace
+3. WHEN a seller submits an incomplete product form, THE Marketplace System SHALL display validation errors for missing required fields
+4. WHEN a seller adds a product, THE Marketplace System SHALL automatically include the product in relevant category bundles and recommendations
+5. WHEN a seller uploads a logo or demo visual, THE Marketplace System SHALL validate the file format and size before accepting
 
 ### Requirement 13
 
@@ -160,17 +168,100 @@ The Startup Marketplace is a web-based platform where startups can discover, com
 
 #### Acceptance Criteria
 
-1. WHEN a buyer views any page THEN the Marketplace System SHALL display a navigation bar with links to Homepage, Marketplace, Sign In, Search, Category Filters, Orders, and Cart
-2. WHEN a buyer clicks a navigation link THEN the Marketplace System SHALL navigate to the corresponding page
-3. WHEN a buyer is on a specific page THEN the Marketplace System SHALL highlight the corresponding navigation item
-4. WHEN a buyer views the navigation bar THEN the Marketplace System SHALL display the cart item count if items exist in the cart
+1. WHEN a buyer views any page, THE Marketplace System SHALL display a navigation bar with links to Homepage, Marketplace, Sign In, Search, Category Filters, Orders, and Cart
+2. WHEN a buyer clicks a navigation link, THE Marketplace System SHALL navigate to the corresponding page
+3. WHEN a buyer is on a specific page, THE Marketplace System SHALL highlight the corresponding navigation item
+4. WHEN a buyer views the navigation bar, THE Marketplace System SHALL display the cart item count if items exist in the cart
 
 ### Requirement 14
 
-**User Story:** As a buyer, I want to see recommendations for new and notable products, so that I can discover high-quality services.
+**User Story:** As a buyer, I want to see personalized recommendations and relevant product suggestions, so that I can discover services tailored to my needs.
 
 #### Acceptance Criteria
 
-1. WHEN a buyer views the homepage THEN the Marketplace System SHALL display a "new and notable" section with recently added or featured products
-2. WHEN a buyer views recommendations THEN the Marketplace System SHALL display products with the same card format as other marketplace views
-3. WHEN the Marketplace System generates recommendations THEN the Marketplace System SHALL prioritize products based on recency, ratings, or featured status
+1. WHEN a buyer views the homepage, THE Marketplace System SHALL display a "new and notable" section with recently added or featured products
+2. WHEN a buyer views the homepage, THE Marketplace System SHALL display a "recommended for you" section with products based on browsing history and bookmarks
+3. WHEN a buyer views a product detail page, THE Marketplace System SHALL display "frequently bought together" suggestions
+4. WHEN a buyer views recommendations, THE Marketplace System SHALL display products with the same card format as other marketplace views
+5. WHEN the Marketplace System generates recommendations, THE Marketplace System SHALL prioritize products based on recency, ratings, featured status, and buyer behavior
+
+### Requirement 15
+
+**User Story:** As a buyer, I want to manage my purchased products and track their performance, so that I can evaluate ROI and usage effectiveness.
+
+#### Acceptance Criteria
+
+1. WHEN a buyer accesses the product management dashboard, THE Marketplace System SHALL display all purchased products with usage metrics and performance data
+2. WHEN a buyer views a purchased product, THE Marketplace System SHALL display implementation status, usage statistics, and ROI calculations
+3. WHEN a buyer tracks product performance, THE Marketplace System SHALL display time-series data showing adoption and value metrics
+4. WHEN a buyer provides feedback on a purchased product, THE Marketplace System SHALL store the feedback and make it available to the seller
+
+### Requirement 16
+
+**User Story:** As a seller, I want to access analytics and competitor insights, so that I can improve my product positioning and performance.
+
+#### Acceptance Criteria
+
+1. WHEN a seller accesses the analytics dashboard, THE Marketplace System SHALL display product views, conversion rates, bookmark counts, and revenue metrics
+2. WHEN a seller views competitor analysis, THE Marketplace System SHALL display main competitors with comparative metrics and market positioning
+3. WHEN a seller receives buyer feedback, THE Marketplace System SHALL display aggregated improvement suggestions based on business metrics
+4. WHEN a seller views performance recommendations, THE Marketplace System SHALL suggest optimization strategies to compete more effectively
+
+### Requirement 17
+
+**User Story:** As a seller, I want to manage my product listings and inventory, so that I can keep offerings current and accurate.
+
+#### Acceptance Criteria
+
+1. WHEN a seller accesses the product management page, THE Marketplace System SHALL display all seller products with edit and delete options
+2. WHEN a seller updates a product, THE Marketplace System SHALL save changes and reflect them immediately in the marketplace
+3. WHEN a seller deletes a product, THE Marketplace System SHALL remove it from the marketplace and mark it as inactive in order history
+4. WHEN a seller views product performance, THE Marketplace System SHALL display sales data, review summaries, and engagement metrics for each product
+
+### Requirement 18
+
+**User Story:** As a buyer, I want to download purchased products and complete transactions on-site, so that I can access services immediately after purchase.
+
+#### Acceptance Criteria
+
+1. WHEN a buyer completes a purchase for a downloadable product, THE Marketplace System SHALL provide immediate download access on the confirmation page
+2. WHEN a buyer views order history, THE Marketplace System SHALL display download links for all purchased digital products
+3. WHEN a buyer completes checkout, THE Marketplace System SHALL process the full transaction including payment capture within the platform
+4. WHEN a buyer downloads a product, THE Marketplace System SHALL track the download event and update usage metrics
+
+### Requirement 19
+
+**User Story:** As a buyer, I want to request automated quotes for services, so that I can receive pricing without manual negotiation.
+
+#### Acceptance Criteria
+
+1. WHEN a buyer views a product with quote-based pricing, THE Marketplace System SHALL display a "Request Quote" button instead of fixed pricing
+2. WHEN a buyer submits a quote request with company details and requirements, THE Marketplace System SHALL automatically calculate pricing based on predefined rules
+3. WHEN a quote is generated, THE Marketplace System SHALL display the quote to the buyer with pricing breakdown and validity period
+4. WHEN a buyer accepts a quote, THE Marketplace System SHALL convert it to a cart item with the quoted price locked
+
+### Requirement 20
+
+**User Story:** As a buyer, I want to create basic product bundles, so that I can purchase complementary services together.
+
+#### Acceptance Criteria
+
+1. WHEN a buyer adds multiple products to cart, THE Marketplace System SHALL suggest bundle options for complementary products
+2. WHEN a buyer creates a custom bundle, THE Marketplace System SHALL apply basic bundle pricing rules
+3. WHEN a buyer views bundle suggestions, THE Marketplace System SHALL display products that are commonly purchased together
+4. WHEN a buyer purchases a bundle, THE Marketplace System SHALL process all bundle items as a single transaction
+
+### Requirement 21
+
+**User Story:** As the system, I want to persist all marketplace data in Supabase Database, so that data is reliably stored and retrieved across all features.
+
+#### Acceptance Criteria
+
+1. WHEN a seller creates or updates a product, THE Marketplace System SHALL store the product data in the Supabase Database
+2. WHEN a buyer adds a bookmark, THE Marketplace System SHALL persist the bookmark relationship in the Supabase Database
+3. WHEN a buyer adds items to cart, THE Marketplace System SHALL store the cart data in the Supabase Database
+4. WHEN a buyer completes an order, THE Marketplace System SHALL persist the order and order items in the Supabase Database
+5. WHEN a buyer submits a review, THE Marketplace System SHALL store the review data in the Supabase Database
+6. WHEN the Marketplace System displays products, bookmarks, cart items, orders, or reviews, THE Marketplace System SHALL retrieve the data from the Supabase Database
+7. WHEN a buyer or seller authenticates, THE Marketplace System SHALL use Supabase authentication services to manage user sessions
+8. WHEN analytics or metrics are calculated, THE Marketplace System SHALL store and retrieve the data from the Supabase Database

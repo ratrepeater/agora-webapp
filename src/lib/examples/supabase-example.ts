@@ -1,53 +1,64 @@
 // Example: Using Supabase with TypeScript types
 import { supabase } from '$lib/helpers/supabase';
 import type { Database } from '$lib/helpers/database.types';
+import type { Product } from '$lib/helpers/types';
 
 // Type-safe database operations
-type Todo = Database['public']['Tables']['todos']['Row'];
+type ProductRow = Database['public']['Tables']['products']['Row'];
 
-// Example 1: Fetch all todos
-export async function getAllTodos() {
-  const { data, error } = await supabase
-    .from('todos')
-    .select('*');
-  
-  if (error) {
-    console.error('Error fetching todos:', error);
-    return [];
-  }
-  
-  return data as Todo[];
+// Example 1: Fetch all products
+export async function getAllProducts() {
+	const { data, error } = await supabase.from('products').select('*');
+
+	if (error) {
+		console.error('Error fetching products:', error);
+		return [];
+	}
+
+	return data as Product[];
 }
 
-// Example 2: Create a new todo
-export async function createTodo(title: string) {
-  const { data, error } = await supabase
-    .from('todos')
-    .insert({ title })
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error creating todo:', error);
-    return null;
-  }
-  
-  return data as Todo;
+// Example 2: Fetch products by category
+export async function getProductsByCategory(category: string) {
+	const { data, error } = await supabase
+		.from('products')
+		.select('*')
+		.eq('category', category);
+
+	if (error) {
+		console.error('Error fetching products:', error);
+		return [];
+	}
+
+	return data as Product[];
 }
 
-// Example 3: Update a todo
-export async function toggleTodo(id: string, completed: boolean) {
-  const { data, error } = await supabase
-    .from('todos')
-    .update({ completed })
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error updating todo:', error);
-    return null;
-  }
-  
-  return data as Todo;
+// Example 3: Fetch a single product with reviews
+export async function getProductWithReviews(productId: string) {
+	const { data, error } = await supabase
+		.from('products')
+		.select(
+			`
+      *,
+      reviews (
+        id,
+        rating,
+        review_text,
+        created_at,
+        buyer:profiles (
+          full_name,
+          email
+        )
+      )
+    `
+		)
+		.eq('id', productId)
+		.single();
+
+	if (error) {
+		console.error('Error fetching product:', error);
+		return null;
+	}
+
+	return data;
 }
