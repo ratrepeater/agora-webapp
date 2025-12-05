@@ -5,8 +5,9 @@ import { createClient } from '@supabase/supabase-js';
  * This should only be used in tests
  */
 
-const SUPABASE_URL = 'https://sbfpxgsgabkgbutzhgwm.supabase.co';
-const SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNiZnB4Z3NnYWJrZ2J1dHpoZ3dtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjE4ODQ4MywiZXhwIjoyMDc3NzY0NDgzfQ.FGeTitHzEIeHKkSkvfvincnoRRHFTwYLb156uoPXP9I';
+// Local Supabase configuration (from `npx supabase start`)
+const SUPABASE_URL = 'http://127.0.0.1:54321';
+const SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
 
 // Use service role key to bypass RLS in tests
 export const supabaseTest = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {

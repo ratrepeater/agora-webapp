@@ -1,18 +1,24 @@
 import { supabase } from '$lib/helpers/supabase';
 import type { ProductFeature } from '$lib/helpers/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * ProductFeatureService - Handles all product feature-related database operations
  * Manages CRUD operations for product features with relevance scoring
  */
 export class ProductFeatureService {
+	private client: SupabaseClient;
+
+	constructor(client?: SupabaseClient) {
+		this.client = client || supabase;
+	}
 	/**
 	 * Get all features for a specific product, sorted by relevance score (descending)
 	 * @param productId - Product ID
 	 * @returns Array of product features sorted by relevance
 	 */
 	async getByProduct(productId: string): Promise<ProductFeature[]> {
-		const { data, error } = await supabase
+		const { data, error } = await this.client
 			.from('product_features')
 			.select('*')
 			.eq('product_id', productId)
@@ -37,7 +43,7 @@ export class ProductFeatureService {
 		feature_category?: string;
 		relevance_score?: number;
 	}): Promise<ProductFeature> {
-		const { data, error } = await supabase
+		const { data, error } = await this.client
 			.from('product_features')
 			.insert({
 				product_id: feature.product_id,
@@ -71,7 +77,7 @@ export class ProductFeatureService {
 			relevance_score?: number;
 		}
 	): Promise<ProductFeature> {
-		const { data, error } = await supabase
+		const { data, error } = await this.client
 			.from('product_features')
 			.update(updates)
 			.eq('id', id)
@@ -90,7 +96,7 @@ export class ProductFeatureService {
 	 * @param id - Feature ID
 	 */
 	async delete(id: string): Promise<void> {
-		const { error } = await supabase.from('product_features').delete().eq('id', id);
+		const { error } = await this.client.from('product_features').delete().eq('id', id);
 
 		if (error) {
 			throw new Error(`Failed to delete product feature: ${error.message}`);
@@ -208,7 +214,7 @@ export class ProductFeatureService {
 			relevance_score: feature.relevance_score || 50
 		}));
 
-		const { data, error } = await supabase
+		const { data, error } = await this.client
 			.from('product_features')
 			.insert(featuresToInsert)
 			.select();

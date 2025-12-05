@@ -144,7 +144,7 @@ export type CloudClientType = 'cloud' | 'client' | 'hybrid';
 export type ImplementationStatus = 'not_started' | 'in_progress' | 'completed' | 'paused';
 export type QuoteStatus = 'pending' | 'accepted' | 'rejected' | 'expired';
 
-// Extended product type with ratings
+// Extended product type with ratings (Product already has price_cents from database)
 export interface ProductWithRating extends Product {
 	average_rating: number;
 	review_count: number;

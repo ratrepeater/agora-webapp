@@ -59,55 +59,55 @@ This implementation plan breaks down the Startup Marketplace feature into discre
     - Test overall score weighting
     - _Requirements: 4.4_
 
-- [-] 4. Implement product features system
+- [ ] 4. Implement product features system
   - [x] 4.1 Create ProductFeatureService
     - Implement methods to create, update, delete product features
     - Implement getByProduct method sorted by relevance_score
     - Add feature categorization logic
     - _Requirements: 4.1_
   
-  - [ ] 4.2 Write property test for feature score calculation
+  - [x] 4.2 Write property test for feature score calculation
     - **Property 19: Form validation completeness**
     - **Validates: Requirements 12.3**
 
-- [ ] 5. Implement authentication and authorization
-  - [ ] 5.1 Set up Supabase Auth integration
+- [-] 5. Implement authentication and authorization
+  - [x] 5.1 Set up Supabase Auth integration
     - Configure Supabase Auth in supabase.ts helper
     - Create auth store for client-side state management
     - Implement sign-in, sign-up, sign-out functions for buyers
     - Implement sign-in, sign-up, sign-out functions for sellers
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 11.1, 11.2, 11.3, 11.4_
   
-  - [ ] 5.2 Implement route protection
+  - [x] 5.2 Implement route protection
     - Create +layout.server.ts with session checking
     - Add redirect logic for unauthenticated users
     - Add role-based authorization checks
     - _Requirements: 10.5_
   
-  - [ ] 5.3 Write property test for protected route authorization
+  - [x] 5.3 Write property test for protected route authorization
     - **Property 17: Protected route authorization**
     - **Validates: Requirements 10.5**
 
-- [ ] 6. Build core UI components
-  - [ ] 6.1 Create ProductCard component
+- [x] 6. Build core UI components
+  - [x] 6.1 Create ProductCard component
     - Implement grid and carousel variants
     - Display product info, scores, price, demo visual
     - Add compare, bookmark, and add to cart buttons
     - Implement click handlers and event emission
     - _Requirements: 1.2, 2.4, 6.3, 14.4_
   
-  - [ ] 6.2 Write property test for product card completeness
+  - [x] 6.2 Write property test for product card completeness
     - **Property 1: Product card completeness**
     - **Validates: Requirements 1.2, 2.4, 4.1, 6.3, 14.4**
   
-  - [ ] 6.3 Create ProductRow component
+  - [x] 6.3 Create ProductRow component
     - Implement horizontal scrolling with smooth animation
     - Add lazy loading for additional products
     - Implement touch/swipe support
     - Add scroll indicators
     - _Requirements: 1.1, 1.3_
   
-  - [ ] 6.4 Create ProductDetailView component
+  - [x] 6.4 Create ProductDetailView component
     - Display hero section with product info and CTAs
     - Display long description and extended metrics
     - Display score breakdown with explanations
@@ -116,11 +116,11 @@ This implementation plan breaks down the Startup Marketplace feature into discre
     - Display similar products section
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
   
-  - [ ] 6.5 Write property test for extended metrics completeness
+  - [x] 6.5 Write property test for extended metrics completeness
     - **Property 5: Extended metrics completeness**
     - **Validates: Requirements 4.4**
   
-  - [ ] 6.6 Create ComparisonTable component
+  - [x] 6.6 Create ComparisonTable component
     - Display up to 3 products side-by-side
     - Show all metrics, price, reviews, features
     - Highlight differences between products
@@ -128,15 +128,15 @@ This implementation plan breaks down the Startup Marketplace feature into discre
     - Display empty state for < 2 products
     - _Requirements: 5.3, 5.4, 5.5_
   
-  - [ ] 6.7 Write property test for comparison list size constraint
+  - [x] 6.7 Write property test for comparison list size constraint
     - **Property 6: Comparison list size constraint**
     - **Validates: Requirements 5.2**
   
-  - [ ] 6.8 Write property test for comparison display completeness
+  - [x] 6.8 Write property test for comparison display completeness
     - **Property 7: Comparison display completeness**
     - **Validates: Requirements 5.3**
   
-  - [ ] 6.9 Create NavShell component
+  - [x] 6.9 Create NavShell component
     - Display navigation links (Homepage, Marketplace, Search, etc.)
     - Show cart item count badge
     - Highlight active page
@@ -144,61 +144,61 @@ This implementation plan breaks down the Startup Marketplace feature into discre
     - Implement responsive mobile menu
     - _Requirements: 13.1, 13.2, 13.3, 13.4_
   
-  - [ ] 6.10 Write property test for cart count accuracy
+  - [x] 6.10 Write property test for cart count accuracy
     - **Property 25: Cart count accuracy**
     - **Validates: Requirements 13.4**
   
-  - [ ] 6.11 Create FilterPanel component
+  - [x] 6.11 Create FilterPanel component
     - Display category filter options
     - Display search input with debouncing
     - Display additional filters (price, rating)
     - Emit filter change events
     - _Requirements: 2.2, 2.3, 3.1, 3.2_
 
-- [ ] 7. Implement bookmark functionality
-  - [ ] 7.1 Create BookmarkService
+- [-] 7. Implement bookmark functionality
+  - [x] 7.1 Create BookmarkService
     - Implement add, remove, toggle methods
     - Implement getByBuyer and isBookmarked methods
     - Add database persistence to bookmarks table
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
   
-  - [ ] 7.2 Write property test for bookmark data round-trip
+  - [x] 7.2 Write property test for bookmark data round-trip
     - **Property 45: Bookmark data round-trip**
     - **Validates: Requirements 21.2**
   
-  - [ ] 7.3 Write property test for bookmark toggle idempotence
+  - [x] 7.3 Write property test for bookmark toggle idempotence
     - **Property 9: Bookmark toggle idempotence**
     - **Validates: Requirements 6.2**
   
-  - [ ] 7.4 Write property test for list modification invariant (bookmarks)
+  - [x] 7.4 Write property test for list modification invariant (bookmarks)
     - **Property 8: List modification invariant**
     - **Validates: Requirements 6.1, 6.4**
 
-- [ ] 8. Implement cart functionality
-  - [ ] 8.1 Create CartService
+- [x] 8. Implement cart functionality
+  - [x] 8.1 Create CartService
     - Implement addItem, updateQuantity, removeItem, clear methods
     - Implement getItems and getTotal methods
     - Add database persistence to cart_items table
     - Handle duplicate items by updating quantity
     - _Requirements: 7.1, 7.2, 7.3_
   
-  - [ ] 8.2 Write property test for cart data round-trip
+  - [x] 8.2 Write property test for cart data round-trip
     - **Property 46: Cart data round-trip**
     - **Validates: Requirements 21.3**
   
-  - [ ] 8.3 Write property test for cart total accuracy
+  - [x] 8.3 Write property test for cart total accuracy
     - **Property 10: Cart total accuracy**
     - **Validates: Requirements 7.2**
   
-  - [ ] 8.4 Write property test for cart removal updates total
+  - [x] 8.4 Write property test for cart removal updates total
     - **Property 11: Cart removal updates total**
     - **Validates: Requirements 7.3**
   
-  - [ ] 8.5 Write property test for list modification invariant (cart)
+  - [x] 8.5 Write property test for list modification invariant (cart)
     - **Property 8: List modification invariant**
     - **Validates: Requirements 7.1**
   
-  - [ ] 8.6 Create CartSummary component
+  - [x] 8.6 Create CartSummary component
     - Display cart items with product details
     - Show total cost
     - Add quantity adjustment controls
@@ -206,15 +206,15 @@ This implementation plan breaks down the Startup Marketplace feature into discre
     - Add checkout button
     - _Requirements: 7.2, 7.3_
 
-- [ ] 9. Implement order and checkout functionality
-  - [ ] 9.1 Create OrderService
+- [-] 9. Implement order and checkout functionality
+  - [x] 9.1 Create OrderService
     - Implement create method for demo transactions (zero charge)
     - Implement getByBuyer and getById methods
     - Add database persistence to orders and order_items tables
     - Clear cart after successful order creation
     - _Requirements: 7.4, 7.5, 8.1, 8.2_
   
-  - [ ] 9.2 Write property test for checkout creates order
+  - [x] 9.2 Write property test for checkout creates order
     - **Property 12: Checkout creates order**
     - **Validates: Requirements 7.5**
   

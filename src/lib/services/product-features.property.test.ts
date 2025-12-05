@@ -1,8 +1,10 @@
 import { describe, test, expect, beforeAll, afterEach } from 'vitest';
 import * as fc from 'fast-check';
-import { productFeatureService } from './product-features';
+import { ProductFeatureService } from './product-features';
 import { supabaseTest } from '$lib/test-utils/supabase-test';
-import { seedCategories } from '$lib/test-utils/seed-categories';
+
+// Create a test-specific service instance that uses the test client
+const productFeatureService = new ProductFeatureService(supabaseTest);
 
 /**
  * Property-based tests for ProductFeatureService
@@ -83,25 +85,15 @@ async function ensureTestSeller() {
 
 // Helper to create a test product
 async function createTestProduct(sellerId: string): Promise<string> {
-	const { data: categoryData } = await supabaseTest
-		.from('categories')
-		.select('id')
-		.eq('key', 'hr')
-		.single();
-
-	if (!categoryData) {
-		throw new Error('Failed to get category');
-	}
-
-	const { data, error } = await supabaseTest
+	const { data, error} = await supabaseTest
 		.from('products')
 		.insert({
 			name: 'Test Product for Features',
 			short_description: 'Test product',
-			price_cents: 1000,
+			long_description: 'Test product long description',
+			price: 10.00,
 			seller_id: sellerId,
-			category_id: categoryData.id,
-			status: 'published'
+			category: 'HR'
 		})
 		.select()
 		.single();
@@ -124,7 +116,6 @@ describe('ProductFeatureService Property-Based Tests', () => {
 	let testProductId: string;
 
 	beforeAll(async () => {
-		await seedCategories();
 		testSellerId = await ensureTestSeller();
 	});
 
