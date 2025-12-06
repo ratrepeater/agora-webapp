@@ -120,7 +120,7 @@
 	class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer {variant ===
 		'carousel'
 		? 'w-80 flex-shrink-0'
-		: 'w-full'}"
+		: 'w-full h-full'} flex flex-col"
 	onclick={handleClick}
 	role="article"
 	tabindex="0"
@@ -136,14 +136,30 @@
 				class="w-full h-48"
 				height={192}
 			/>
+			<!-- Category Badge Overlay -->
+			{#if product.category}
+				<div class="absolute top-2 left-2">
+					<span class="badge badge-primary badge-lg capitalize font-semibold shadow-lg">
+						{product.category}
+					</span>
+				</div>
+			{/if}
 		</figure>
 	{:else}
 		<figure class="relative h-48 bg-base-200 flex items-center justify-center">
 			<span class="text-base-content/30 text-4xl">📦</span>
+			<!-- Category Badge Overlay -->
+			{#if product.category}
+				<div class="absolute top-2 left-2">
+					<span class="badge badge-primary badge-lg capitalize font-semibold shadow-lg">
+						{product.category}
+					</span>
+				</div>
+			{/if}
 		</figure>
 	{/if}
 
-	<div class="card-body p-4">
+	<div class="card-body p-4 flex-1 flex flex-col">
 		<!-- Logo and Name -->
 		<div class="flex items-start gap-3 mb-2">
 			{#if product.logo_url}
@@ -217,7 +233,7 @@
 		</div>
 
 		<!-- Action Buttons -->
-		<div class="card-actions justify-end gap-2">
+		<div class="card-actions justify-end gap-2 mt-auto">
 			{#if showCompareButton}
 				<button
 					class="btn btn-sm {isCompared

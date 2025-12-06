@@ -4,6 +4,7 @@
 	import ProductCard from '$lib/components/ProductCard.svelte';
 	import FilterPanel from '$lib/components/FilterPanel.svelte';
 	import ProductCardSkeleton from '$lib/components/ProductCardSkeleton.svelte';
+	import ComparisonBar from '$lib/components/ComparisonBar.svelte';
 	import { comparisonStore } from '$lib/stores/comparison';
 	import type { PageData } from './$types';
 	import type { ProductWithRating, ProductCategory } from '$lib/helpers/types';
@@ -16,7 +17,8 @@
 	// Subscribe to comparison store to track compared products
 	$effect(() => {
 		const unsubscribe = comparisonStore.subscribe((state) => {
-			comparedProducts = new Set(state.products.map(p => p.id));
+			const allProducts = Object.values(state.productsByCategory).flat();
+			comparedProducts = new Set(allProducts.map(p => p.id));
 		});
 		return unsubscribe;
 	});
@@ -238,9 +240,7 @@
 		} else {
 			// Try to add to comparison
 			const result = comparisonStore.add(product);
-			if (result === 'added') {
-				goto('/compare');
-			} else if (result === 'full') {
+			if (result === 'full') {
 				alert('You can only compare up to 3 products at a time. Remove a product from the comparison to add a new one.');
 			}
 		}
@@ -346,3 +346,6 @@
 		</main>
 	</div>
 </div>
+
+<!-- Comparison Bar -->
+<ComparisonBar />

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import ProductCard from '$lib/components/ProductCard.svelte';
+	import ComparisonBar from '$lib/components/ComparisonBar.svelte';
 	import { comparisonStore } from '$lib/stores/comparison';
 	import type { PageData } from './$types';
 	import type { ProductWithRating } from '$lib/helpers/types';
@@ -9,15 +10,39 @@
 
 	let bookmarks = $state(data.bookmarks || []);
 	
-	// Track compared products
-	let comparedProducts = $state<Set<string>>(new Set());
+	// Track compared products - use derived state from store
+	let comparedProductIds = $state<Set<string>>(new Set());
 
 	// Subscribe to comparison store to track compared products
 	$effect(() => {
 		const unsubscribe = comparisonStore.subscribe((state) => {
-			comparedProducts = new Set(state.products.map(p => p.id));
+			const allProducts = Object.values(state.productsByCategory).flat();
+			comparedProductIds = new Set(allProducts.map(p => p.id));
 		});
 		return unsubscribe;
+	});
+
+	// Set active category to first bookmark's category ONLY on initial load if no category is set
+	let hasSetInitialCategory = $state(false);
+	
+	$effect(() => {
+		if (bookmarks.length > 0 && !hasSetInitialCategory) {
+			// Check if there's already an active category in the store
+			let currentActiveCategory: any = null;
+			const unsubscribe = comparisonStore.subscribe((state) => {
+				currentActiveCategory = state.activeCategory;
+			});
+			unsubscribe();
+			
+			// Only set if there's no active category
+			if (!currentActiveCategory) {
+				const firstBookmark = bookmarks.find(b => b.product?.id && b.product?.category);
+				if (firstBookmark?.product?.category) {
+					comparisonStore.setActiveCategory(firstBookmark.product.category as any);
+				}
+			}
+			hasSetInitialCategory = true;
+		}
 	});
 	
 	// Track cart quantities - map of productId to quantity, initialize from server data
@@ -31,10 +56,8 @@
 
 	async function handleRemoveBookmark(productId: string) {
 		try {
-			const response = await fetch('/api/bookmarks', {
-				method: 'DELETE',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ productId })
+			const response = await fetch(`/api/bookmarks?productId=${encodeURIComponent(productId)}`, {
+				method: 'DELETE'
 			});
 
 			if (response.ok) {
@@ -125,17 +148,24 @@
 	}
 
 	function handleCompare(product: ProductWithRating) {
+		console.log('Compare clicked for product:', product.id, product.name);
+		console.log('Product category:', product.category);
+		console.log('Currently compared products:', Array.from(comparedProductIds));
+		
 		// Check if product is already being compared
-		if (comparedProducts.has(product.id)) {
+		if (comparedProductIds.has(product.id)) {
+			console.log('Removing from comparison');
 			// Remove from comparison
 			comparisonStore.remove(product.id);
 		} else {
+			console.log('Adding to comparison');
 			// Try to add to comparison
 			const result = comparisonStore.add(product);
-			if (result === 'added') {
-				goto('/compare');
-			} else if (result === 'full') {
+			console.log('Add result:', result);
+			if (result === 'full') {
 				alert('You can only compare up to 3 products at a time. Remove a product from the comparison to add a new one.');
+			} else if (result === 'no_category') {
+				alert('This product does not have a category and cannot be compared.');
 			}
 		}
 	}
@@ -156,7 +186,7 @@
 		<!-- Bookmarked Products Grid -->
 		<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 			{#each bookmarks.filter(b => b.product?.id) as bookmark (bookmark.product.id)}
-				{@const isCompared = comparedProducts.has(bookmark.product.id)}
+				{@const isCompared = comparedProductIds.has(bookmark.product.id)}
 				{@const cartQuantity = cartQuantities.get(bookmark.product.id) || 0}
 				<div class="relative">
 					<ProductCard
@@ -224,3 +254,8 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Comparison Bar - Only show if there are bookmarks -->
+{#if bookmarks && bookmarks.length > 0}
+	<ComparisonBar />
+{/if}

@@ -21,7 +21,8 @@ export class BookmarkService {
 				*,
 				product:products (
 					*,
-					reviews (rating)
+					reviews (rating),
+					category:categories!category_id (key)
 				)
 			`
 			)
@@ -43,8 +44,11 @@ export class BookmarkService {
 
 			const review_count = ratings.length;
 
-			// Remove the reviews array and add calculated fields
-			const { reviews: _, ...productData } = product;
+			// Extract category key from category object
+			const categoryKey = product?.category?.key || null;
+
+			// Remove the reviews and category arrays and add calculated fields
+			const { reviews: _, category: __, ...productData } = product;
 
 			return {
 				id: bookmark.buyer_id + bookmark.product_id, // Composite key for bookmark
@@ -53,6 +57,7 @@ export class BookmarkService {
 				created_at: bookmark.created_at,
 				product: {
 					...productData,
+					category: categoryKey,
 					average_rating,
 					review_count
 				} as ProductWithRating

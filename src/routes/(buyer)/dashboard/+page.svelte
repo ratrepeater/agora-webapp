@@ -82,6 +82,7 @@
 						<thead>
 							<tr>
 								<th>Product</th>
+								<th>Category</th>
 								<th>Purchase Date</th>
 								<th>Status</th>
 								<th>Usage Count</th>
@@ -108,6 +109,13 @@
 												</div>
 											</div>
 										</div>
+									</td>
+									<td>
+										{#if product.product.category}
+											<span class="badge badge-primary capitalize">{product.product.category}</span>
+										{:else}
+											<span class="text-sm opacity-50">N/A</span>
+										{/if}
 									</td>
 									<td>{formatDate(product.purchase_date)}</td>
 									<td>
@@ -213,16 +221,87 @@
 
 		<!-- Spending by Category -->
 		{#if dashboard.spending_by_category.length > 0}
+			{@const total = dashboard.spending_by_category.reduce((sum, cat) => sum + cat.amount, 0)}
+			{@const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']}
+			
 			<div class="mb-8">
 				<h2 class="text-2xl font-bold mb-4">Spending by Category</h2>
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-					{#each dashboard.spending_by_category as category}
-						<div class="stat bg-base-200 rounded-lg">
-							<div class="stat-title">{category.category}</div>
-							<div class="stat-value text-sm">${category.amount.toFixed(2)}</div>
-							<div class="stat-desc">{category.product_count} products</div>
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+					<!-- Pie Chart -->
+					<div class="bg-base-200 rounded-lg p-6">
+						<h3 class="text-lg font-semibold mb-4">Distribution</h3>
+						
+						<!-- Simple CSS Pie Chart -->
+						<div class="flex items-center justify-center mb-6">
+							<div class="relative w-64 h-64">
+								{@const segments = dashboard.spending_by_category.map((cat, i) => ({
+									...cat,
+									percentage: (cat.amount / total) * 100,
+									color: colors[i % colors.length]
+								}))}
+								
+								<!-- Pie chart using conic-gradient -->
+								<div 
+									class="w-full h-full rounded-full"
+									style="background: conic-gradient({segments.map((seg, i) => {
+										const prevPercentage = segments.slice(0, i).reduce((sum, s) => sum + s.percentage, 0);
+										return `${seg.color} ${prevPercentage}% ${prevPercentage + seg.percentage}%`;
+									}).join(', ')});"
+								></div>
+								
+								<!-- Center circle for donut effect -->
+								<div class="absolute inset-0 m-auto w-32 h-32 bg-base-200 rounded-full flex items-center justify-center">
+									<div class="text-center">
+										<div class="text-2xl font-bold">${total.toFixed(0)}</div>
+										<div class="text-xs opacity-70">Total</div>
+									</div>
+								</div>
+							</div>
 						</div>
-					{/each}
+						
+						<!-- Legend -->
+						<div class="space-y-2">
+							{#each dashboard.spending_by_category as category, i}
+								{@const percentage = ((category.amount / total) * 100).toFixed(1)}
+								<div class="flex items-center justify-between">
+									<div class="flex items-center gap-2">
+										<div 
+											class="w-4 h-4 rounded"
+											style="background-color: {colors[i % colors.length]}"
+										></div>
+										<span class="capitalize">{category.category}</span>
+									</div>
+									<span class="font-semibold">{percentage}%</span>
+								</div>
+							{/each}
+						</div>
+					</div>
+					
+					<!-- Breakdown Table -->
+					<div class="bg-base-200 rounded-lg p-6">
+						<h3 class="text-lg font-semibold mb-4">Breakdown</h3>
+						<div class="space-y-4">
+							{#each dashboard.spending_by_category as category, i}
+								{@const percentage = ((category.amount / total) * 100).toFixed(1)}
+								<div>
+									<div class="flex justify-between mb-1">
+										<span class="capitalize font-medium">{category.category}</span>
+										<span class="font-semibold">${category.amount.toFixed(2)}</span>
+									</div>
+									<div class="flex justify-between text-sm opacity-70 mb-2">
+										<span>{category.product_count} {category.product_count === 1 ? 'product' : 'products'}</span>
+										<span>{percentage}%</span>
+									</div>
+									<progress 
+										class="progress progress-primary w-full" 
+										value={category.amount} 
+										max={total}
+										style="--progress-color: {colors[i % colors.length]}"
+									></progress>
+								</div>
+							{/each}
+						</div>
+					</div>
 				</div>
 			</div>
 		{/if}

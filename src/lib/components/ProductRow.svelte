@@ -7,8 +7,15 @@
 		products: (ProductWithScores | ProductWithRating)[];
 		category?: string;
 		showMoreLink?: string;
+		bookmarkedProductIds?: Set<string>;
+		comparedProductIds?: Set<string>;
+		cartQuantities?: Map<string, number>;
 		onproductclick?: (product: ProductWithScores | ProductWithRating) => void;
 		onshowmore?: () => void;
+		oncompare?: (product: ProductWithScores | ProductWithRating) => void;
+		onbookmark?: (productId: string) => void;
+		onaddtocart?: (productId: string) => void;
+		onupdatecartquantity?: (productId: string, quantity: number) => void;
 	}
 
 	let {
@@ -16,8 +23,15 @@
 		products,
 		category,
 		showMoreLink,
+		bookmarkedProductIds = new Set(),
+		comparedProductIds = new Set(),
+		cartQuantities = new Map(),
 		onproductclick,
-		onshowmore
+		onshowmore,
+		oncompare,
+		onbookmark,
+		onaddtocart,
+		onupdatecartquantity
 	}: Props = $props();
 
 	let scrollContainer: HTMLDivElement;
@@ -117,11 +131,19 @@
 			style="scroll-padding: 0 1rem;"
 		>
 			{#each products as product (product.id)}
+				{@const cartQuantity = cartQuantities.get(product.id) || 0}
 				<div class="snap-start">
 					<ProductCard
 						{product}
 						variant="carousel"
+						isBookmarked={bookmarkedProductIds.has(product.id)}
+						isCompared={comparedProductIds.has(product.id)}
+						{cartQuantity}
 						onclick={() => handleProductClick(product)}
+						oncompare={() => oncompare?.(product)}
+						onbookmark={() => onbookmark?.(product.id)}
+						onaddtocart={() => onaddtocart?.(product.id)}
+						onupdatecartquantity={(qty) => onupdatecartquantity?.(product.id, qty)}
 					/>
 				</div>
 			{/each}

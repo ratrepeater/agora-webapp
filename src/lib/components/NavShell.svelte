@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { goto } from '$app/navigation';
+    import { goto, invalidateAll } from '$app/navigation';
     import { page } from '$app/stores';
     import favicon from '$lib/assets/favicon.svg';
     import type { UserRole } from '$lib/helpers/types';
@@ -13,6 +13,31 @@
 
     let { children, user = null, userRole = null, cartItemCount = 0 }: Props = $props();
 
+    // Handle sign out
+    async function handleSignOut() {
+        try {
+            // Use FormData for proper form submission
+            const formData = new FormData();
+            const response = await fetch('/auth/signout', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.ok) {
+                // Invalidate all data and redirect
+                await invalidateAll();
+                goto('/');
+            } else {
+                // Fallback: just navigate to sign-out page
+                goto('/auth/signout');
+            }
+        } catch (error) {
+            console.error('Sign out error:', error);
+            // Fallback: just navigate to sign-out page
+            goto('/auth/signout');
+        }
+    }
+
     let searchQuery = $state('');
     let selectedCategory = $state('All');
 
@@ -24,10 +49,6 @@
         'Marketing': 'marketing',
         'DevTools': 'devtools'
     };
-
-    // Debounce timer for search
-    let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-    const DEBOUNCE_DELAY = 300; // milliseconds
 
     // Determine current path for active state highlighting
     let currentPath = $derived($page.url.pathname);
@@ -56,30 +77,9 @@
         goto(`/marketplace${queryString ? '?' + queryString : ''}`);
     }
 
-    // Handle search input with debouncing
-    function handleSearchInput(event: Event) {
-        const target = event.target as HTMLInputElement;
-        const value = target.value;
-        searchQuery = value;
-
-        // Clear existing timer
-        if (searchDebounceTimer) {
-            clearTimeout(searchDebounceTimer);
-        }
-
-        // Set new timer to trigger search after delay
-        searchDebounceTimer = setTimeout(() => {
-            handleSearch();
-        }, DEBOUNCE_DELAY);
-    }
-
     // Handle search input keypress
     function handleSearchKeypress(event: KeyboardEvent) {
         if (event.key === 'Enter') {
-            // Clear debounce timer and search immediately
-            if (searchDebounceTimer) {
-                clearTimeout(searchDebounceTimer);
-            }
             handleSearch();
         }
     }
@@ -139,15 +139,13 @@
                             class="grow"
                             placeholder="Search services by name, category, or industry"
                             aria-label="Search products"
-                            value={searchQuery}
-                            oninput={handleSearchInput}
+                            bind:value={searchQuery}
                             onkeypress={handleSearchKeypress}
                         />
                     </label>
                     <select 
                         class="select join-item w-30" 
-                        bind:value={selectedCategory} 
-                        onchange={handleSearch}
+                        bind:value={selectedCategory}
                         aria-label="Filter by category"
                     >
                         {#each categories as category}
@@ -173,9 +171,6 @@
                         </a>
                         <a href="/dashboard" class="btn btn-ghost {isActive('/dashboard') ? 'btn-active' : ''}">
                             Dashboard
-                        </a>
-                        <a href="/become-seller" class="btn btn-outline">
-                            Become a Seller
                         </a>
                     {:else if userRole === 'seller'}
                         <a href="/seller/dashboard" class="btn btn-ghost {isActive('/seller/dashboard') ? 'btn-active' : ''}">
@@ -231,7 +226,9 @@
                             <li class="menu-title">
                                 <span>{user.email}</span>
                             </li>
-                            <li role="menuitem"><a href="/auth/signout">Sign Out</a></li>
+                            <li role="menuitem">
+                                <button type="button" onclick={handleSignOut} class="w-full text-left">Sign Out</button>
+                            </li>
                         </ul>
                     </div>
                 {:else}
@@ -255,8 +252,7 @@
                         type="search"
                         placeholder="Search..."
                         class="input input-bordered w-full"
-                        value={searchQuery}
-                        oninput={handleSearchInput}
+                        bind:value={searchQuery}
                         onkeypress={handleSearchKeypress}
                     />
                 </div>
@@ -272,14 +268,15 @@
                         Cart {#if cartItemCount > 0}<span class="badge badge-sm">{cartItemCount}</span>{/if}
                     </a></li>
                     <li><a href="/dashboard" class="{isActive('/dashboard') ? 'active' : ''}">Dashboard</a></li>
-                    <li class="mt-2"><a href="/become-seller" class="btn btn-outline btn-sm w-full">Become a Seller</a></li>
                 {:else if userRole === 'seller'}
                     <li><a href="/seller/dashboard" class="{isActive('/seller/dashboard') ? 'active' : ''}">Dashboard</a></li>
                     <li><a href="/seller/products" class="{isActive('/seller/products') ? 'active' : ''}">My Products</a></li>
                     <li><a href="/seller/competitors" class="{isActive('/seller/competitors') ? 'active' : ''}">Competitors</a></li>
                 {/if}
 
-                <li class="mt-4"><a href="/auth/signout">Sign Out</a></li>
+                <li class="mt-4">
+                    <button type="button" onclick={handleSignOut} class="w-full text-left">Sign Out</button>
+                </li>
             {:else}
                 <li><a href="/cart" class="{isActive('/cart') ? 'active' : ''}">
                     Cart {#if cartItemCount > 0}<span class="badge badge-sm">{cartItemCount}</span>{/if}

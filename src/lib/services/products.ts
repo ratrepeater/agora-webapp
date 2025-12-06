@@ -59,6 +59,7 @@ export class ProductService {
 				.select(
 					`
 					*,
+					category:categories!category_id (key),
 					reviews (rating),
 					product_scores (
 						fit_score,
@@ -162,6 +163,7 @@ export class ProductService {
 				.select(
 					`
 					*,
+					category:categories!category_id (key),
 					reviews (rating),
 					product_scores (
 						fit_score,
@@ -204,6 +206,7 @@ export class ProductService {
 			.select(
 				`
 				*,
+				category:categories!category_id (key),
 				reviews (rating),
 				product_scores (
 					fit_score,
@@ -247,6 +250,7 @@ export class ProductService {
 			.select(
 				`
 				*,
+				category:categories!category_id (key),
 				reviews (rating),
 				product_scores (
 					fit_score,
@@ -283,6 +287,7 @@ export class ProductService {
 					.select(
 						`
 						*,
+						category:categories!category_id (key),
 						reviews (rating),
 						product_scores (
 							fit_score,
@@ -326,6 +331,7 @@ export class ProductService {
 					.select(
 						`
 						*,
+						category:categories!category_id (key),
 						reviews (rating),
 						product_scores (
 							fit_score,
@@ -384,6 +390,7 @@ export class ProductService {
 			.select(
 				`
 				*,
+				category:categories!category_id (key),
 				reviews (rating),
 				product_scores (
 					fit_score,
@@ -551,11 +558,15 @@ export class ProductService {
 			// Extract scores from product_scores array (should be single item or empty)
 			const scores = product.product_scores?.[0] || {};
 
-			// Remove the reviews and product_scores arrays and add calculated fields
-			const { reviews: _, product_scores: __, ...productData } = product;
+			// Extract category key from category object
+			const categoryKey = product.category?.key || null;
+
+			// Remove the reviews, product_scores, and category arrays and add calculated fields
+			const { reviews: _, product_scores: __, category: ___, ...productData } = product;
 
 			return {
 				...productData,
+				category: categoryKey,
 				average_rating,
 				review_count,
 				fit_score: scores.fit_score || 0,

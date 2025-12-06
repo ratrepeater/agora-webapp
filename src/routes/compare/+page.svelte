@@ -1,18 +1,60 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import ComparisonTable from '$lib/components/ComparisonTable.svelte';
 	import { comparisonStore } from '$lib/stores/comparison';
-	import type { ProductWithRating } from '$lib/helpers/types';
+	import type { ProductWithRating, ProductCategory } from '$lib/helpers/types';
+
+	const categories: ProductCategory[] = ['hr', 'legal', 'marketing', 'devtools'];
+	const categoryLabels: Record<ProductCategory, string> = {
+		hr: 'HR',
+		legal: 'Legal',
+		marketing: 'Marketing',
+		devtools: 'DevTools'
+	};
+
+	// Get category from URL or use active category from store
+	let selectedCategory = $state<ProductCategory | null>(null);
+	let productsByCategory = $state<Record<ProductCategory, ProductWithRating[]>>({
+		hr: [],
+		legal: [],
+		marketing: [],
+		devtools: []
+	});
+	let products = $state<ProductWithRating[]>([]);
 
 	// Subscribe to comparison store
-	let products = $derived($comparisonStore.products);
+	$effect(() => {
+		const unsubscribe = comparisonStore.subscribe((state) => {
+			productsByCategory = state.productsByCategory;
+			
+			// Get category from URL query param
+			const urlCategory = $page.url.searchParams.get('category') as ProductCategory | null;
+			
+			// Determine selected category
+			if (urlCategory && categories.includes(urlCategory)) {
+				selectedCategory = urlCategory;
+			} else if (state.activeCategory) {
+				selectedCategory = state.activeCategory;
+			} else {
+				// Find first non-empty category
+				const firstCategory = categories.find(
+					cat => state.productsByCategory[cat].length > 0
+				);
+				selectedCategory = firstCategory || 'hr';
+			}
+			
+			// Update products for selected category
+			products = selectedCategory ? state.productsByCategory[selectedCategory] : [];
+		});
+		return unsubscribe;
+	});
 
 	function handleRemove(productId: string) {
 		comparisonStore.remove(productId);
 	}
 
 	function handleAddToCart(productId: string) {
-		// Navigate to product detail page or add to cart directly
 		goto(`/products/${productId}`);
 	}
 
@@ -21,26 +63,62 @@
 	}
 
 	function handleBrowseMarketplace() {
-		goto('/marketplace');
+		if (selectedCategory) {
+			goto(`/marketplace?category=${selectedCategory}`);
+		} else {
+			goto('/marketplace');
+		}
 	}
 
 	function handleClearComparison() {
-		comparisonStore.clear();
+		if (selectedCategory) {
+			comparisonStore.clearCategory(selectedCategory);
+		}
+	}
+
+	function handleCategoryChange(event: Event) {
+		const target = event.target as HTMLSelectElement;
+		const category = target.value as ProductCategory;
+		selectedCategory = category;
+		comparisonStore.setActiveCategory(category);
+		// Update URL
+		goto(`/compare?category=${category}`, { replaceState: true });
 	}
 </script>
 
 <div class="container mx-auto px-4 py-8">
 	<!-- Page Header -->
-	<div class="mb-8">
-		<h1 class="text-4xl font-bold mb-2">Compare Products</h1>
-		<p class="text-base-content/70">
-			Compare up to 3 products side-by-side to find the best fit for your needs
-		</p>
+	<div class="mb-8 flex items-center justify-between">
+		<div>
+			<h1 class="text-4xl font-bold mb-2">Compare Products</h1>
+			<p class="text-base-content/70">
+				Compare up to 3 products side-by-side to find the best fit for your needs
+			</p>
+		</div>
+		
+		<!-- Category Selector -->
+		<div class="flex items-center gap-3">
+			<span class="text-lg font-semibold">Compare:</span>
+			<select
+				class="select select-bordered"
+				value={selectedCategory || ''}
+				onchange={handleCategoryChange}
+				aria-label="Select category"
+			>
+				{#each categories as category}
+					{@const count = productsByCategory[category].length}
+					<option value={category}>
+						{categoryLabels[category]} ({count}/3)
+					</option>
+				{/each}
+			</select>
+		</div>
 	</div>
 
 	<!-- Comparison Table -->
 	<ComparisonTable
 		{products}
+		category={selectedCategory}
 		comparisonMetrics={[
 			'price',
 			'overall_score',
@@ -55,37 +133,27 @@
 		onaddtocart={handleAddToCart}
 		onviewdetails={handleViewDetails}
 		onaddproduct={handleBrowseMarketplace}
+		addProductLabel={selectedCategory ? `Add ${categoryLabels[selectedCategory]} Product` : 'Add Product'}
 	/>
 
 	<!-- Clear Comparison Button -->
 	{#if products && products.length > 0}
 		<div class="mt-8 text-center">
 			<button class="btn btn-outline" onclick={handleClearComparison}>
-				Clear Comparison
+				Clear {selectedCategory ? categoryLabels[selectedCategory] : ''} Comparison
 			</button>
 		</div>
 	{/if}
 
-	<!-- Info Box -->
-	{#if products && products.length > 0 && products.length < 3}
-		<div class="alert alert-info mt-8">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				fill="none"
-				viewBox="0 0 24 24"
-				class="stroke-current shrink-0 w-6 h-6"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-				></path>
-			</svg>
-			<span>
-				You can compare up to 3 products. You currently have {products.length}
-				{products.length === 1 ? 'product' : 'products'} selected.
-			</span>
+	<!-- Browse Category Products Button -->
+	{#if selectedCategory}
+		<div class="mt-8 text-center">
+			<button class="btn btn-outline btn-primary btn-lg" onclick={handleBrowseMarketplace}>
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+				</svg>
+				Browse {categoryLabels[selectedCategory]} Products
+			</button>
 		</div>
 	{/if}
 </div>

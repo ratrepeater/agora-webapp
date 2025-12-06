@@ -3,14 +3,25 @@
 
 	interface Props {
 		products: (ProductWithScores | ProductWithRating)[];
+		category?: string | null;
 		comparisonMetrics?: string[];
+		addProductLabel?: string;
 		onremove?: (productId: string) => void;
 		onaddtocart?: (productId: string) => void;
 		onviewdetails?: (productId: string) => void;
 		onaddproduct?: () => void;
 	}
 
-	let { products = [], comparisonMetrics = [], onremove, onaddtocart, onviewdetails, onaddproduct }: Props = $props();
+	let { 
+		products = [], 
+		category = null,
+		comparisonMetrics = [], 
+		addProductLabel = 'Add Product',
+		onremove, 
+		onaddtocart, 
+		onviewdetails, 
+		onaddproduct 
+	}: Props = $props();
 	
 	let canAddMore = $derived(products.length < 3);
 	let emptySlots = $derived(Math.max(0, 3 - products.length));
@@ -178,7 +189,7 @@
 											d="M12 4v16m8-8H4"
 										/>
 									</svg>
-									Add Product
+									{addProductLabel}
 								</button>
 								<p class="text-sm text-base-content/60 text-center">
 									Compare up to 3 products
