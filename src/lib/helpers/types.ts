@@ -476,6 +476,7 @@ export interface ImplementationTimeline {
 export interface PurchasedProductSummary {
 	product: ProductWithRating;
 	purchase_date: string;
+	quantity: number;
 	implementation_status: string;
 	usage_count: number;
 	roi_actual: number | null;

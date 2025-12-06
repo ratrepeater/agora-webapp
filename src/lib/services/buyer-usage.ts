@@ -354,7 +354,7 @@ export class BuyerUsageService {
 
 		const { data: orderItemsData, error: orderItemsError } = await this.supabase
 			.from('order_items')
-			.select('order_id, product_id')
+			.select('order_id, product_id, quantity')
 			.in('order_id', orderIds);
 
 		if (orderItemsError || !orderItemsData) {
@@ -362,11 +362,11 @@ export class BuyerUsageService {
 			return null;
 		}
 
-		// Get products for all order items
+		// Get products for all order items with category
 		const productIds = [...new Set(orderItemsData.map((item) => item.product_id))];
 		const { data: productsData, error: productsError } = await this.supabase
 			.from('products')
-			.select('*')
+			.select('*, categories(key)')
 			.in('id', productIds);
 
 		if (productsError || !productsData) {
@@ -380,7 +380,7 @@ export class BuyerUsageService {
 			.select('product_id, rating')
 			.in('product_id', productIds);
 
-		// Build product map with ratings
+		// Build product map with ratings and category
 		const productMap = new Map();
 		for (const product of productsData) {
 			const productReviews = (reviewsData || []).filter((r) => r.product_id === product.id);
@@ -389,8 +389,12 @@ export class BuyerUsageService {
 					? productReviews.reduce((sum, r) => sum + r.rating, 0) / productReviews.length
 					: 0;
 
+			// Extract category key from joined data
+			const category = (product as any).categories?.key || null;
+
 			productMap.set(product.id, {
 				...product,
+				category,
 				average_rating: averageRating,
 				review_count: productReviews.length
 			});
@@ -415,18 +419,20 @@ export class BuyerUsageService {
 			if (!product || !order) continue;
 
 			const usage = usageMap.get(`${product.id}-${order.id}`);
+			const quantity = (orderItem as any).quantity || 1;
 
 			purchasedProducts.push({
 				product,
 				purchase_date: order.created_at,
+				quantity,
 				implementation_status: usage?.implementation_status || 'not_started',
 				usage_count: usage?.usage_count || 0,
 				roi_actual: usage?.roi_actual || null,
-				roi_expected: usage?.roi_expected || null,
+				roi_expected: null, // Field doesn't exist in schema
 				satisfaction_score: usage?.satisfaction_score || null
 			});
 
-			totalSpent += product.price_cents / 100;
+			totalSpent += (product.price_cents / 100) * quantity;
 		}
 
 		// Calculate metrics
@@ -449,13 +455,15 @@ export class BuyerUsageService {
 			.filter((p) => p.usage_count < 5 && p.implementation_status !== 'not_started')
 			.slice(0, 5);
 
-		// Calculate spending by category
+		// Calculate spending by category (using actual cost = price × quantity)
 		const categorySpendingMap = new Map<string, { amount: number; count: number }>();
 		for (const p of purchasedProducts) {
-			const categoryId = p.product.category_id || 'uncategorized';
-			const current = categorySpendingMap.get(categoryId) || { amount: 0, count: 0 };
-			categorySpendingMap.set(categoryId, {
-				amount: current.amount + p.product.price_cents / 100,
+			const category = p.product.category || 'uncategorized';
+			const current = categorySpendingMap.get(category) || { amount: 0, count: 0 };
+			const price = (p.product as any).price_cents || 0;
+			const totalCost = (price / 100) * p.quantity;
+			categorySpendingMap.set(category, {
+				amount: current.amount + totalCost,
 				count: current.count + 1
 			});
 		}
@@ -472,18 +480,11 @@ export class BuyerUsageService {
 		const implementationTimeline: ImplementationTimeline[] = purchasedProducts
 			.filter((p) => p.implementation_status !== 'not_started')
 			.map((p) => {
-				const usage = usageData.find(
-					(u) => u.product_id === p.product.id && u.implementation_status !== 'not_started'
-				);
 				return {
 					product_name: p.product.name,
-					start_date: usage?.implementation_started_at || p.purchase_date,
-					expected_completion: usage?.implementation_started_at
-						? new Date(
-								new Date(usage.implementation_started_at).getTime() + 90 * 24 * 60 * 60 * 1000
-						  ).toISOString()
-						: '',
-					actual_completion: usage?.implementation_completed_at,
+					start_date: p.purchase_date, // Use purchase date as start
+					expected_completion: '', // Field doesn't exist in schema
+					actual_completion: p.implementation_status === 'completed' ? p.purchase_date : undefined, // Approximate
 					status: p.implementation_status
 				};
 			});

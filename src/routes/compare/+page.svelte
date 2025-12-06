@@ -4,6 +4,13 @@
 	import ComparisonTable from '$lib/components/ComparisonTable.svelte';
 	import { comparisonStore } from '$lib/stores/comparison';
 	import type { ProductWithRating, ProductCategory } from '$lib/helpers/types';
+	import type { PageData } from './$types';
+
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 
 	const categories: ProductCategory[] = ['hr', 'legal', 'marketing', 'devtools'];
 	const categoryLabels: Record<ProductCategory, string> = {
@@ -22,30 +29,91 @@
 		devtools: []
 	});
 	let products = $state<ProductWithRating[]>([]);
+	let categoryMetrics = $state<any>({ metricDefinitions: [], metrics: {} });
+	let cartQuantities = $state<Map<string, number>>(
+		new Map(Object.entries(data.cartQuantities || {}).map(([k, v]) => [k, v as number]))
+	);
 
-	// Subscribe to comparison store
+	// Update cart quantities when data changes
 	$effect(() => {
-		const unsubscribe = comparisonStore.subscribe((state) => {
+		if (data.cartQuantities) {
+			cartQuantities = new Map(Object.entries(data.cartQuantities).map(([k, v]) => [k, v as number]));
+		}
+	});
+
+	// Fetch category metrics
+	async function fetchCategoryMetrics() {
+		if (selectedCategory && products.length > 0) {
+			const productIds = products.map(p => p.id).join(',');
+			try {
+				const response = await fetch(`/api/products/metrics?category=${selectedCategory}&productIds=${productIds}`);
+				if (response.ok) {
+					const data = await response.json();
+					categoryMetrics = data;
+				} else {
+					categoryMetrics = { metricDefinitions: [], metrics: {} };
+				}
+			} catch (error) {
+				console.error('Error fetching category metrics:', error);
+				categoryMetrics = { metricDefinitions: [], metrics: {} };
+			}
+		} else {
+			categoryMetrics = { metricDefinitions: [], metrics: {} };
+		}
+	}
+
+	// Subscribe to comparison store and fetch products with scores
+	$effect(() => {
+		const unsubscribe = comparisonStore.subscribe(async (state) => {
 			productsByCategory = state.productsByCategory;
 			
-			// Get category from URL query param
+			// Get category from URL query param (only read once to avoid loops)
 			const urlCategory = $page.url.searchParams.get('category') as ProductCategory | null;
 			
-			// Determine selected category
+			// Determine selected category (only if not already set by user interaction)
+			let newCategory: ProductCategory | null = null;
 			if (urlCategory && categories.includes(urlCategory)) {
-				selectedCategory = urlCategory;
+				newCategory = urlCategory;
 			} else if (state.activeCategory) {
-				selectedCategory = state.activeCategory;
+				newCategory = state.activeCategory;
 			} else {
 				// Find first non-empty category
 				const firstCategory = categories.find(
 					cat => state.productsByCategory[cat].length > 0
 				);
-				selectedCategory = firstCategory || 'hr';
+				newCategory = firstCategory || 'hr';
 			}
 			
-			// Update products for selected category
-			products = selectedCategory ? state.productsByCategory[selectedCategory] : [];
+			// Only update if category actually changed
+			if (newCategory !== selectedCategory) {
+				selectedCategory = newCategory;
+			}
+			
+			// Get products for selected category
+			const categoryProducts = selectedCategory ? state.productsByCategory[selectedCategory] : [];
+			
+			// Fetch products with scores if we have products
+			if (categoryProducts.length > 0) {
+				const ids = categoryProducts.map(p => p.id);
+				try {
+					const response = await fetch(`/api/products/with-scores?productIds=${ids.join(',')}`);
+					if (response.ok) {
+						const data = await response.json();
+						products = data.products || [];
+					} else {
+						products = categoryProducts;
+					}
+				} catch (error) {
+					console.error('Error fetching products with scores:', error);
+					products = categoryProducts;
+				}
+				
+				// Fetch category metrics after products are loaded
+				await fetchCategoryMetrics();
+			} else {
+				products = [];
+				categoryMetrics = { metricDefinitions: [], metrics: {} };
+			}
 		});
 		return unsubscribe;
 	});
@@ -54,8 +122,76 @@
 		comparisonStore.remove(productId);
 	}
 
-	function handleAddToCart(productId: string) {
-		goto(`/products/${productId}`);
+	async function handleAddToCart(productId: string) {
+		try {
+			const response = await fetch('/api/cart', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ productId, quantity: 1 })
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to add to cart');
+			}
+
+			// Update local cart quantity
+			const currentQty = cartQuantities.get(productId) || 0;
+			const newQty = currentQty + 1;
+			cartQuantities.set(productId, newQty);
+			cartQuantities = new Map(cartQuantities); // Create new Map to trigger reactivity
+		} catch (error) {
+			console.error('Add to cart error:', error);
+			alert('Failed to add to cart. Please try again.');
+		}
+	}
+
+	async function handleUpdateCartQuantity(productId: string, newQuantity: number) {
+		const currentQty = cartQuantities.get(productId) || 0;
+		const diff = newQuantity - currentQty;
+
+		// Update local state optimistically FIRST for instant UI feedback
+		if (newQuantity > 0) {
+			cartQuantities.set(productId, newQuantity);
+		} else {
+			cartQuantities.delete(productId);
+		}
+		cartQuantities = new Map(cartQuantities); // Create new Map to trigger reactivity
+
+		try {
+			if (diff > 0) {
+				// Add more
+				const response = await fetch('/api/cart', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ productId, quantity: diff })
+				});
+
+				if (!response.ok) {
+					throw new Error('Failed to update cart');
+				}
+			} else if (diff < 0) {
+				// Remove items
+				const response = await fetch('/api/cart/product', {
+					method: 'DELETE',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ productId, quantity: Math.abs(diff) })
+				});
+
+				if (!response.ok) {
+					throw new Error('Failed to update cart');
+				}
+			}
+		} catch (error) {
+			console.error('Update cart error:', error);
+			// Revert optimistic update on error
+			if (currentQty > 0) {
+				cartQuantities.set(productId, currentQty);
+			} else {
+				cartQuantities.delete(productId);
+			}
+			cartQuantities = new Map(cartQuantities);
+			alert('Failed to update cart. Please try again.');
+		}
 	}
 
 	function handleViewDetails(productId: string) {
@@ -79,10 +215,9 @@
 	function handleCategoryChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
 		const category = target.value as ProductCategory;
-		selectedCategory = category;
 		comparisonStore.setActiveCategory(category);
-		// Update URL
-		goto(`/compare?category=${category}`, { replaceState: true });
+		// Update URL - don't set selectedCategory here, let the effect handle it
+		goto(`/compare?category=${category}`, { replaceState: true, noScroll: true });
 	}
 </script>
 
@@ -119,6 +254,8 @@
 	<ComparisonTable
 		{products}
 		category={selectedCategory}
+		categoryMetrics={categoryMetrics}
+		{cartQuantities}
 		comparisonMetrics={[
 			'price',
 			'overall_score',
@@ -131,6 +268,7 @@
 		]}
 		onremove={handleRemove}
 		onaddtocart={handleAddToCart}
+		onupdatecartquantity={handleUpdateCartQuantity}
 		onviewdetails={handleViewDetails}
 		onaddproduct={handleBrowseMarketplace}
 		addProductLabel={selectedCategory ? `Add ${categoryLabels[selectedCategory]} Product` : 'Add Product'}

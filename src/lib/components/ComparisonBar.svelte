@@ -20,18 +20,39 @@
 		devtools: 'DevTools'
 	};
 
+	// Track previous active category to prevent loops
+	let previousActiveCategory = $state<ProductCategory | null>(null);
+
 	// Subscribe to comparison store
 	$effect(() => {
 		const unsubscribe = comparisonStore.subscribe((state) => {
 			productsByCategory = state.productsByCategory;
-			activeCategory = state.activeCategory;
+			const newActiveCategory = state.activeCategory;
 			
 			// Update compared products based on active category
-			if (activeCategory) {
-				comparedProducts = state.productsByCategory[activeCategory] || [];
+			if (newActiveCategory) {
+				const newComparedProducts = state.productsByCategory[newActiveCategory] || [];
+				
+				// If current category is empty and we haven't just switched, find a category with products
+				if (newComparedProducts.length === 0 && newActiveCategory === previousActiveCategory) {
+					const categoryWithProducts = categories.find(
+						cat => state.productsByCategory[cat].length > 0
+					);
+					if (categoryWithProducts && categoryWithProducts !== newActiveCategory) {
+						// Use setTimeout to break out of the reactive cycle
+						setTimeout(() => {
+							comparisonStore.setActiveCategory(categoryWithProducts);
+						}, 0);
+					}
+				}
+				
+				comparedProducts = newComparedProducts;
 			} else {
 				comparedProducts = [];
 			}
+			
+			activeCategory = newActiveCategory;
+			previousActiveCategory = newActiveCategory;
 		});
 		return unsubscribe;
 	});

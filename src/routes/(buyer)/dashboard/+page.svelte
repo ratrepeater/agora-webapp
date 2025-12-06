@@ -83,6 +83,7 @@
 							<tr>
 								<th>Product</th>
 								<th>Category</th>
+								<th>Cost</th>
 								<th>Purchase Date</th>
 								<th>Status</th>
 								<th>Usage Count</th>
@@ -104,9 +105,6 @@
 											{/if}
 											<div>
 												<div class="font-bold">{product.product.name}</div>
-												<div class="text-sm opacity-50">
-													{formatCurrency(product.product.price_cents)}
-												</div>
 											</div>
 										</div>
 									</td>
@@ -116,6 +114,14 @@
 										{:else}
 											<span class="text-sm opacity-50">N/A</span>
 										{/if}
+									</td>
+									<td>
+										<div class="font-semibold">
+											{formatCurrency(product.product.price_cents * product.quantity)}
+										</div>
+										<div class="text-sm opacity-50">
+											{formatCurrency(product.product.price_cents)} × {product.quantity}
+										</div>
 									</td>
 									<td>{formatDate(product.purchase_date)}</td>
 									<td>
@@ -223,6 +229,15 @@
 		{#if dashboard.spending_by_category.length > 0}
 			{@const total = dashboard.spending_by_category.reduce((sum, cat) => sum + cat.amount, 0)}
 			{@const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']}
+			{@const segments = dashboard.spending_by_category.map((cat, i) => ({
+				...cat,
+				percentage: (cat.amount / total) * 100,
+				color: colors[i % colors.length]
+			}))}
+			{@const gradientStops = segments.map((seg, i) => {
+				const prevPercentage = segments.slice(0, i).reduce((sum, s) => sum + s.percentage, 0);
+				return `${seg.color} ${prevPercentage}% ${prevPercentage + seg.percentage}%`;
+			}).join(', ')}
 			
 			<div class="mb-8">
 				<h2 class="text-2xl font-bold mb-4">Spending by Category</h2>
@@ -234,19 +249,10 @@
 						<!-- Simple CSS Pie Chart -->
 						<div class="flex items-center justify-center mb-6">
 							<div class="relative w-64 h-64">
-								{@const segments = dashboard.spending_by_category.map((cat, i) => ({
-									...cat,
-									percentage: (cat.amount / total) * 100,
-									color: colors[i % colors.length]
-								}))}
-								
 								<!-- Pie chart using conic-gradient -->
 								<div 
 									class="w-full h-full rounded-full"
-									style="background: conic-gradient({segments.map((seg, i) => {
-										const prevPercentage = segments.slice(0, i).reduce((sum, s) => sum + s.percentage, 0);
-										return `${seg.color} ${prevPercentage}% ${prevPercentage + seg.percentage}%`;
-									}).join(', ')});"
+									style="background: conic-gradient({gradientStops});"
 								></div>
 								
 								<!-- Center circle for donut effect -->

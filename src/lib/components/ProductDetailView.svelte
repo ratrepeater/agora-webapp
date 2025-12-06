@@ -14,13 +14,15 @@
 		features?: ProductFeature[];
 		reviews?: ReviewWithBuyer[];
 		similarProducts?: ProductWithScores[];
+		categoryMetrics?: { metricDefinitions: any[]; metrics: Record<string, any> };
 		averageRating?: number;
 		isBookmarked?: boolean;
 		isCompared?: boolean;
-		isInCart?: boolean;
+		cartQuantity?: number;
 		oncompare?: () => void;
 		onbookmark?: () => void;
 		onaddtocart?: () => void;
+		onupdatecartquantity?: (quantity: number) => void;
 	}
 
 	let {
@@ -28,15 +30,24 @@
 		scoreBreakdown,
 		features = [],
 		reviews = [],
+		categoryMetrics = { metricDefinitions: [], metrics: {} },
 		similarProducts = [],
 		averageRating: propAverageRating,
 		isBookmarked = false,
 		isCompared = false,
-		isInCart = false,
+		cartQuantity = 0,
 		oncompare,
 		onbookmark,
-		onaddtocart
+		onaddtocart,
+		onupdatecartquantity
 	}: Props = $props();
+
+	// Local state for animations and UI
+	let isAnimating = $state(false);
+	let showAddedMessage = $state(false);
+
+	// Derive whether to show quantity controls
+	const showQuantityControls = $derived(!showAddedMessage && cartQuantity > 0);
 
 	// Calculate average rating from reviews or use provided value
 	const averageRating = $derived(
@@ -49,6 +60,40 @@
 
 	// Sort features by relevance score
 	const sortedFeatures = $derived([...features].sort((a, b) => b.relevance_score - a.relevance_score));
+
+	// Handle bookmark with animation
+	function handleBookmark() {
+		isAnimating = true;
+		setTimeout(() => {
+			isAnimating = false;
+		}, 300);
+		onbookmark?.();
+	}
+
+	// Handle add to cart
+	function handleAddToCart() {
+		onaddtocart?.();
+		showAddedMessage = true;
+		setTimeout(() => {
+			showAddedMessage = false;
+		}, 500);
+	}
+
+	// Handle quantity increase
+	function handleIncreaseQuantity() {
+		const newQuantity = cartQuantity + 1;
+		onupdatecartquantity?.(newQuantity);
+	}
+
+	// Handle quantity decrease
+	function handleDecreaseQuantity() {
+		if (cartQuantity > 1) {
+			const newQuantity = cartQuantity - 1;
+			onupdatecartquantity?.(newQuantity);
+		} else {
+			onupdatecartquantity?.(0);
+		}
+	}
 </script>
 
 <div class="product-detail-view max-w-7xl mx-auto p-6">
@@ -100,26 +145,97 @@
 
 				<!-- Action Buttons -->
 				<div class="flex gap-3">
-					<button class="btn btn-primary btn-lg" onclick={onaddtocart} disabled={isInCart}>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-6 w-6"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-							/>
-						</svg>
-						{isInCart ? 'In Cart' : 'Add to Cart'}
-					</button>
-					<button class="btn btn-lg {isCompared
-						? 'btn-primary bg-blue-600 border-blue-600 hover:bg-blue-700'
-						: 'btn-outline'}" onclick={oncompare}>
+					<!-- Add to Cart / Quantity Controls -->
+					{#if !showQuantityControls && !showAddedMessage}
+						<button class="btn btn-primary btn-lg" onclick={handleAddToCart}>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-6 w-6"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+								/>
+							</svg>
+							Add to Cart
+						</button>
+					{:else if showAddedMessage}
+						<button class="btn btn-success btn-lg" disabled>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-6 w-6"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M5 13l4 4L19 7"
+								/>
+							</svg>
+							Added!
+						</button>
+					{:else}
+						<div class="btn-group">
+							<button class="btn btn-primary btn-lg" onclick={handleDecreaseQuantity}>
+								{#if cartQuantity === 1}
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										class="h-5 w-5"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+										/>
+									</svg>
+								{:else}
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										class="h-5 w-5"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+									>
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+									</svg>
+								{/if}
+							</button>
+							<button class="btn btn-primary btn-lg no-animation pointer-events-none">
+								{cartQuantity}
+							</button>
+							<button class="btn btn-primary btn-lg" onclick={handleIncreaseQuantity}>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-5 w-5"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+								</svg>
+							</button>
+						</div>
+					{/if}
+
+					<!-- Compare Button -->
+					<button
+						class="btn btn-lg {isCompared
+							? 'btn-primary bg-blue-600 border-blue-600 hover:bg-blue-700'
+							: 'btn-outline'}"
+						onclick={oncompare}
+					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							class="h-6 w-6"
@@ -136,9 +252,12 @@
 						</svg>
 						{isCompared ? 'Compared' : 'Compare'}
 					</button>
+
+					<!-- Bookmark Button -->
 					<button
-						class="btn {isBookmarked ? 'btn-primary' : 'btn-outline'} btn-lg"
-						onclick={onbookmark}
+						class="btn {isBookmarked ? 'btn-primary' : 'btn-outline'} btn-lg {isAnimating ? 'scale-110' : ''}"
+						style="transition-duration: 300ms;"
+						onclick={handleBookmark}
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -165,59 +284,6 @@
 		<div class="card-body">
 			<h2 class="card-title text-2xl">About This Product</h2>
 			<p class="text-base-content/80 whitespace-pre-line">{product.long_description}</p>
-		</div>
-	</div>
-
-	<!-- Extended Metrics -->
-	<div class="card bg-base-100 shadow-xl mb-8">
-		<div class="card-body">
-			<h2 class="card-title text-2xl mb-4">Business Metrics</h2>
-			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-				{#if product.roi_percentage !== null}
-					<div class="stat bg-base-200 rounded-lg">
-						<div class="stat-title">ROI</div>
-						<div class="stat-value text-2xl">{product.roi_percentage}%</div>
-						<div class="stat-desc">Return on Investment</div>
-					</div>
-				{/if}
-				{#if product.retention_rate !== null}
-					<div class="stat bg-base-200 rounded-lg">
-						<div class="stat-title">Retention Rate</div>
-						<div class="stat-value text-2xl">{product.retention_rate}%</div>
-						<div class="stat-desc">Customer retention</div>
-					</div>
-				{/if}
-				{#if product.quarter_over_quarter_change !== null}
-					<div class="stat bg-base-200 rounded-lg">
-						<div class="stat-title">QoQ Change</div>
-						<div class="stat-value text-2xl {product.quarter_over_quarter_change >= 0 ? 'text-success' : 'text-error'}">
-							{product.quarter_over_quarter_change > 0 ? '+' : ''}{product.quarter_over_quarter_change}%
-						</div>
-						<div class="stat-desc">Quarter over quarter</div>
-					</div>
-				{/if}
-				{#if product.cloud_client_classification}
-					<div class="stat bg-base-200 rounded-lg">
-						<div class="stat-title">Deployment</div>
-						<div class="stat-value text-2xl capitalize">{product.cloud_client_classification}</div>
-						<div class="stat-desc">Deployment model</div>
-					</div>
-				{/if}
-				{#if product.implementation_time_days !== null}
-					<div class="stat bg-base-200 rounded-lg">
-						<div class="stat-title">Implementation</div>
-						<div class="stat-value text-2xl">{product.implementation_time_days}</div>
-						<div class="stat-desc">Days to implement</div>
-					</div>
-				{/if}
-				{#if product.access_depth}
-					<div class="stat bg-base-200 rounded-lg">
-						<div class="stat-title">Access Depth</div>
-						<div class="stat-value text-xl">{product.access_depth}</div>
-						<div class="stat-desc">System access levels</div>
-					</div>
-				{/if}
-			</div>
 		</div>
 	</div>
 
@@ -280,6 +346,49 @@
 						></progress>
 						<p class="text-sm text-base-content/70 mt-2">Customer satisfaction rating</p>
 					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Category-Specific Metrics -->
+	{#if categoryMetrics.metricDefinitions && categoryMetrics.metricDefinitions.length > 0}
+		<div class="card bg-base-100 shadow-xl mb-8">
+			<div class="card-body">
+				<h2 class="card-title text-2xl mb-4 capitalize">{product.category || 'Category'} Metrics</h2>
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+					{#each categoryMetrics.metricDefinitions as metricDef}
+						{@const metricData = categoryMetrics.metrics[metricDef.code]}
+						<div class="stat bg-base-200 rounded-lg">
+							<div class="stat-title">{metricDef.label}</div>
+							{#if metricData}
+								{#if metricDef.data_type === 'boolean'}
+									<div class="stat-value text-2xl">
+										<span class="badge {metricData.value ? 'badge-success' : 'badge-ghost'} badge-lg">
+											{metricData.value ? 'Yes' : 'No'}
+										</span>
+									</div>
+								{:else if metricDef.data_type === 'number'}
+									<div class="stat-value text-2xl">
+										{metricData.value}
+										{#if metricData.unit}
+											<span class="text-lg">{metricData.unit}</span>
+										{/if}
+									</div>
+								{:else}
+									<div class="stat-value text-xl">{metricData.value}</div>
+								{/if}
+								{#if metricDef.description}
+									<div class="stat-desc">{metricDef.description}</div>
+								{/if}
+							{:else}
+								<div class="stat-value text-base-content/50">N/A</div>
+								{#if metricDef.description}
+									<div class="stat-desc">{metricDef.description}</div>
+								{/if}
+							{/if}
+						</div>
+					{/each}
 				</div>
 			</div>
 		</div>

@@ -4,10 +4,13 @@
 	interface Props {
 		products: (ProductWithScores | ProductWithRating)[];
 		category?: string | null;
+		categoryMetrics?: { metricDefinitions: any[]; metrics: Record<string, any> };
 		comparisonMetrics?: string[];
 		addProductLabel?: string;
+		cartQuantities?: Map<string, number>;
 		onremove?: (productId: string) => void;
 		onaddtocart?: (productId: string) => void;
+		onupdatecartquantity?: (productId: string, quantity: number) => void;
 		onviewdetails?: (productId: string) => void;
 		onaddproduct?: () => void;
 	}
@@ -15,13 +18,29 @@
 	let { 
 		products = [], 
 		category = null,
+		categoryMetrics = { metricDefinitions: [], metrics: {} },
 		comparisonMetrics = [], 
 		addProductLabel = 'Add Product',
+		cartQuantities = new Map(),
 		onremove, 
 		onaddtocart, 
+		onupdatecartquantity,
 		onviewdetails, 
 		onaddproduct 
 	}: Props = $props();
+	
+	// Track UI state for each product
+	let showAddedMessage = $state<Map<string, boolean>>(new Map());
+	
+	// Derive whether to show quantity controls based on cart quantities and added message
+	function shouldShowQuantityControls(productId: string): boolean {
+		const isShowingAdded = showAddedMessage.get(productId) || false;
+		if (isShowingAdded) {
+			return false;
+		}
+		const qty = cartQuantities.get(productId) || 0;
+		return qty > 0;
+	}
 	
 	let canAddMore = $derived(products.length < 3);
 	let emptySlots = $derived(Math.max(0, 3 - products.length));
@@ -63,6 +82,30 @@
 	function handleAddToCart(productId: string, e: MouseEvent) {
 		e.stopPropagation();
 		onaddtocart?.(productId);
+		
+		// Show "Added!" message
+		showAddedMessage.set(productId, true);
+		showAddedMessage = new Map(showAddedMessage);
+		setTimeout(() => {
+			showAddedMessage.delete(productId);
+			showAddedMessage = new Map(showAddedMessage);
+		}, 500);
+	}
+
+	function handleIncreaseQuantity(productId: string, e: MouseEvent) {
+		e.stopPropagation();
+		const currentQty = cartQuantities.get(productId) || 0;
+		onupdatecartquantity?.(productId, currentQty + 1);
+	}
+
+	function handleDecreaseQuantity(productId: string, e: MouseEvent) {
+		e.stopPropagation();
+		const currentQty = cartQuantities.get(productId) || 0;
+		if (currentQty > 1) {
+			onupdatecartquantity?.(productId, currentQty - 1);
+		} else {
+			onupdatecartquantity?.(productId, 0);
+		}
 	}
 
 	function handleViewDetails(productId: string, e: MouseEvent) {
@@ -78,6 +121,10 @@
 				<tr>
 					<th class="sticky left-0 bg-base-200 z-10 whitespace-nowrap" style="width: 200px;">Feature</th>
 					{#each products as product}
+						{@const qty = cartQuantities.get(product.id) || 0}
+						{@const showAdded = showAddedMessage.get(product.id) || false}
+						{@const showQty = shouldShowQuantityControls(product.id)}
+						
 						<th class="text-center relative">
 							<!-- Remove button (top-right corner) -->
 							<button
@@ -136,13 +183,42 @@
 								{/if}
 
 								<!-- Action buttons -->
-								<button
-									class="btn btn-sm btn-primary w-full"
-									onclick={(e) => handleAddToCart(product.id, e)}
-									aria-label="Add {product.name} to cart"
-								>
-									Add to Cart
-								</button>
+								{#if !showQty && !showAdded}
+									<button
+										class="btn btn-sm btn-primary w-full"
+										onclick={(e) => handleAddToCart(product.id, e)}
+										aria-label="Add {product.name} to cart"
+									>
+										Add to Cart
+									</button>
+								{:else if showAdded}
+									<button class="btn btn-sm btn-success w-full" disabled>
+										Added!
+									</button>
+								{:else}
+									<div class="btn-group w-full">
+										<button class="btn btn-sm btn-primary" onclick={(e) => handleDecreaseQuantity(product.id, e)}>
+											{#if qty === 1}
+												<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+												</svg>
+											{:else}
+												<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+												</svg>
+											{/if}
+										</button>
+										<button class="btn btn-sm btn-primary no-animation pointer-events-none">
+											{qty}
+										</button>
+										<button class="btn btn-sm btn-primary" onclick={(e) => handleIncreaseQuantity(product.id, e)}>
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+											</svg>
+										</button>
+									</div>
+								{/if}
+								
 								<button
 									class="btn btn-sm btn-ghost w-full"
 									onclick={(e) => handleViewDetails(product.id, e)}
@@ -172,7 +248,7 @@
 								</svg>
 								<button
 									class="btn btn-lg btn-primary"
-									onclick={onaddproduct}
+									onclick={() => onaddproduct?.()}
 									aria-label="Add another product to compare"
 								>
 									<svg
@@ -200,22 +276,34 @@
 				</tr>
 			</thead>
 			<tbody>
+				<!-- Divider Row -->
+				<tr>
+					<td colspan={products.length + emptySlots + 1} class="p-0">
+						<div class="border-t-2 border-black"></div>
+					</td>
+				</tr>
+
+
 				<!-- Price -->
 				<tr>
 					<td class="sticky left-0 bg-base-200 font-semibold">Price</td>
 					{#each products as product}
 						<td class="text-center">
-							<span
-								class="text-xl font-bold {isBestPrice(product.price_cents || 0)
-									? 'text-success'
-									: 'text-base-content'}"
-							>
-								${((product.price_cents || 0) / 100).toFixed(2)}
-							</span>
-							<span class="text-sm text-base-content/60">/month</span>
-							{#if isBestPrice(product.price_cents || 0)}
-								<div class="badge badge-success badge-sm mt-1">Best Price</div>
-							{/if}
+							<div class="flex flex-col items-center gap-1">
+								<div class="flex items-center gap-2">
+									<span
+										class="text-xl font-bold {isBestPrice(product.price_cents || 0)
+											? 'text-success'
+											: 'text-base-content'}"
+									>
+										${((product.price_cents || 0) / 100).toFixed(2)}
+									</span>
+									<span class="text-sm text-base-content/60">/month</span>
+									{#if isBestPrice(product.price_cents || 0)}
+										<div class="badge badge-success badge-sm">Best Price</div>
+									{/if}
+								</div>
+							</div>
 						</td>
 					{/each}
 					{#each Array(emptySlots) as _, i}
@@ -228,16 +316,18 @@
 					<td class="sticky left-0 bg-base-200 font-semibold">Overall Score</td>
 					{#each products as product}
 						<td class="text-center">
-							<span
-								class="text-2xl font-bold {isBestScore(product.overall_score || 0, 'overall_score')
-									? 'text-success'
-									: 'text-base-content'}"
-							>
-								{product.overall_score || 0}
-							</span>
-							{#if isBestScore(product.overall_score || 0, 'overall_score')}
-								<div class="badge badge-success badge-sm mt-1">Highest</div>
-							{/if}
+							<div class="flex items-center justify-center gap-2">
+								<span
+									class="text-xl {isBestScore(product.overall_score || 0, 'overall_score')
+										? 'text-success font-bold'
+										: 'text-base-content'}"
+								>
+									{product.overall_score || 0}
+								</span>
+								{#if isBestScore(product.overall_score || 0, 'overall_score')}
+									<div class="badge badge-success badge-sm">Highest</div>
+								{/if}
+							</div>
 						</td>
 					{/each}
 					{#each Array(emptySlots) as _, i}
@@ -245,21 +335,30 @@
 					{/each}
 				</tr>
 
+				<!-- Divider Row -->
+				<tr>
+					<td colspan={products.length + emptySlots + 1} class="p-0">
+						<div class="border-t-2 border-black"></div>
+					</td>
+				</tr>
+
 				<!-- Fit Score -->
 				<tr>
 					<td class="sticky left-0 bg-base-200 font-semibold">Fit Score</td>
 					{#each products as product}
 						<td class="text-center">
-							<span
-								class="text-xl {isBestScore(product.fit_score || 0, 'fit_score')
-									? 'text-success font-bold'
-									: 'text-base-content'}"
-							>
-								{product.fit_score || 0}
-							</span>
-							{#if isBestScore(product.fit_score || 0, 'fit_score')}
-								<div class="badge badge-success badge-sm mt-1">Highest</div>
-							{/if}
+							<div class="flex items-center justify-center gap-2">
+								<span
+									class="text-xl {isBestScore(product.fit_score || 0, 'fit_score')
+										? 'text-success font-bold'
+										: 'text-base-content'}"
+								>
+									{product.fit_score || 0}
+								</span>
+								{#if isBestScore(product.fit_score || 0, 'fit_score')}
+									<div class="badge badge-success badge-sm">Highest</div>
+								{/if}
+							</div>
 						</td>
 					{/each}
 					{#each Array(emptySlots) as _, i}
@@ -272,16 +371,18 @@
 					<td class="sticky left-0 bg-base-200 font-semibold">Feature Score</td>
 					{#each products as product}
 						<td class="text-center">
-							<span
-								class="text-xl {isBestScore(product.feature_score || 0, 'feature_score')
-									? 'text-success font-bold'
-									: 'text-base-content'}"
+							<div class="flex items-center justify-center gap-2">
+								<span
+									class="text-xl {isBestScore(product.feature_score || 0, 'feature_score')
+										? 'text-success font-bold'
+										: 'text-base-content'}"
 							>
 								{product.feature_score || 0}
 							</span>
 							{#if isBestScore(product.feature_score || 0, 'feature_score')}
-								<div class="badge badge-success badge-sm mt-1">Highest</div>
+								<div class="badge badge-success badge-sm">Highest</div>
 							{/if}
+							</div>
 						</td>
 					{/each}
 					{#each Array(emptySlots) as _, i}
@@ -289,21 +390,25 @@
 					{/each}
 				</tr>
 
+				
+
 				<!-- Integration Score -->
 				<tr>
 					<td class="sticky left-0 bg-base-200 font-semibold">Integration Score</td>
 					{#each products as product}
 						<td class="text-center">
-							<span
-								class="text-xl {isBestScore(product.integration_score || 0, 'integration_score')
-									? 'text-success font-bold'
-									: 'text-base-content'}"
-							>
-								{product.integration_score || 0}
-							</span>
-							{#if isBestScore(product.integration_score || 0, 'integration_score')}
-								<div class="badge badge-success badge-sm mt-1">Highest</div>
-							{/if}
+							<div class="flex items-center justify-center gap-2">
+								<span
+									class="text-xl {isBestScore(product.integration_score || 0, 'integration_score')
+										? 'text-success font-bold'
+										: 'text-base-content'}"
+								>
+									{product.integration_score || 0}
+								</span>
+								{#if isBestScore(product.integration_score || 0, 'integration_score')}
+									<div class="badge badge-success badge-sm">Highest</div>
+								{/if}
+							</div>
 						</td>
 					{/each}
 					{#each Array(emptySlots) as _, i}
@@ -316,16 +421,18 @@
 					<td class="sticky left-0 bg-base-200 font-semibold">Review Score</td>
 					{#each products as product}
 						<td class="text-center">
-							<span
-								class="text-xl {isBestScore(product.review_score || 0, 'review_score')
-									? 'text-success font-bold'
-									: 'text-base-content'}"
-							>
-								{product.review_score || 0}
-							</span>
-							{#if isBestScore(product.review_score || 0, 'review_score')}
-								<div class="badge badge-success badge-sm mt-1">Highest</div>
-							{/if}
+							<div class="flex items-center justify-center gap-2">
+								<span
+									class="text-xl {isBestScore(product.review_score || 0, 'review_score')
+										? 'text-success font-bold'
+										: 'text-base-content'}"
+								>
+									{product.review_score || 0}
+								</span>
+								{#if isBestScore(product.review_score || 0, 'review_score')}
+									<div class="badge badge-success badge-sm">Highest</div>
+								{/if}
+							</div>
 						</td>
 					{/each}
 					{#each Array(emptySlots) as _, i}
@@ -373,125 +480,68 @@
 					{/each}
 				</tr>
 
-				<!-- Extended Metrics Section Header -->
-				<tr class="bg-base-300">
-					<td class="sticky left-0 bg-base-300"></td>
-					<td colspan={products.length + emptySlots} class="font-bold text-center py-3">
-						Extended Metrics
+				<!-- Divider Row -->
+				<tr>
+					<td colspan={products.length + emptySlots + 1} class="p-0">
+						<div class="border-t-2 border-black"></div>
 					</td>
 				</tr>
 
-				<!-- ROI Percentage -->
-				<tr>
-					<td class="sticky left-0 bg-base-200 font-semibold">ROI</td>
-					{#each products as product}
-						<td class="text-center">
-							<span
-								class="text-lg {isBestScore(product.roi_percentage || 0, 'roi_percentage')
-									? 'text-success font-bold'
-									: 'text-base-content'}"
-							>
-								{product.roi_percentage ? `${product.roi_percentage}%` : 'N/A'}
-							</span>
-							{#if product.roi_percentage && isBestScore(product.roi_percentage, 'roi_percentage')}
-								<div class="badge badge-success badge-sm mt-1">Highest</div>
-							{/if}
+				<!-- Category-Specific Metrics Section -->
+				{#if categoryMetrics.metricDefinitions && categoryMetrics.metricDefinitions.length > 0}
+					<tr class="bg-base-300">
+						<td class="sticky left-0 bg-base-300"></td>
+						<td colspan={products.length + emptySlots} class="font-bold text-center py-3">
+							Category-Specific Metrics
 						</td>
-					{/each}
-					{#each Array(emptySlots) as _, i}
-						<td class="bg-base-200"></td>
-					{/each}
-				</tr>
+					</tr>
 
-				<!-- Retention Rate -->
-				<tr>
-					<td class="sticky left-0 bg-base-200 font-semibold">Retention Rate</td>
-					{#each products as product}
-						<td class="text-center">
-							<span
-								class="text-lg {isBestScore(product.retention_rate || 0, 'retention_rate')
-									? 'text-success font-bold'
-									: 'text-base-content'}"
-							>
-								{product.retention_rate ? `${product.retention_rate}%` : 'N/A'}
-							</span>
-							{#if product.retention_rate && isBestScore(product.retention_rate, 'retention_rate')}
-								<div class="badge badge-success badge-sm mt-1">Highest</div>
-							{/if}
+					<!-- Divider Row -->
+					<tr>
+						<td colspan={products.length + emptySlots + 1} class="p-0">
+							<div class="border-t-2 border-black"></div>
 						</td>
-					{/each}
-					{#each Array(emptySlots) as _, i}
-						<td class="bg-base-200"></td>
-					{/each}
-				</tr>
+					</tr>
 
-				<!-- Implementation Time -->
-				<tr>
-					<td class="sticky left-0 bg-base-200 font-semibold">Implementation Time</td>
-					{#each products as product}
-						<td class="text-center">
-							<span class="text-base">
-								{product.implementation_time_days
-									? `${product.implementation_time_days} days`
-									: 'N/A'}
-							</span>
-						</td>
+					{#each categoryMetrics.metricDefinitions as metricDef}
+						<tr>
+							<td class="sticky left-0 bg-base-200 font-semibold">
+								{metricDef.label}
+								{#if metricDef.description}
+									<div class="text-xs font-normal text-base-content/60 mt-1">
+										{metricDef.description}
+									</div>
+								{/if}
+							</td>
+							{#each products as product}
+								{@const metricData = categoryMetrics.metrics[product.id]?.[metricDef.code]}
+								<td class="text-center">
+									{#if metricData}
+										{#if metricDef.data_type === 'boolean'}
+											<span class="badge {metricData.value ? 'badge-success' : 'badge-ghost'}">
+												{metricData.value ? 'Yes' : 'No'}
+											</span>
+										{:else if metricDef.data_type === 'number'}
+											<span class="text-lg">
+												{metricData.value}
+												{#if metricData.unit}
+													<span class="text-sm text-base-content/60">{metricData.unit}</span>
+												{/if}
+											</span>
+										{:else}
+											<span class="text-base">{metricData.value}</span>
+										{/if}
+									{:else}
+										<span class="text-sm text-base-content/60">N/A</span>
+									{/if}
+								</td>
+							{/each}
+							{#each Array(emptySlots) as _, i}
+								<td class="bg-base-200"></td>
+							{/each}
+						</tr>
 					{/each}
-					{#each Array(emptySlots) as _, i}
-						<td class="bg-base-200"></td>
-					{/each}
-				</tr>
-
-				<!-- Cloud/Client Classification -->
-				<tr>
-					<td class="sticky left-0 bg-base-200 font-semibold">Deployment Model</td>
-					{#each products as product}
-						<td class="text-center">
-							<span class="badge badge-outline">
-								{product.cloud_client_classification || 'N/A'}
-							</span>
-						</td>
-					{/each}
-					{#each Array(emptySlots) as _, i}
-						<td class="bg-base-200"></td>
-					{/each}
-				</tr>
-
-				<!-- Access Depth -->
-				<tr>
-					<td class="sticky left-0 bg-base-200 font-semibold">Access Depth</td>
-					{#each products as product}
-						<td class="text-center">
-							<span class="text-base">{product.access_depth || 'N/A'}</span>
-						</td>
-					{/each}
-					{#each Array(emptySlots) as _, i}
-						<td class="bg-base-200"></td>
-					{/each}
-				</tr>
-
-				<!-- Quarter over Quarter Change -->
-				<tr>
-					<td class="sticky left-0 bg-base-200 font-semibold">Q/Q Change</td>
-					{#each products as product}
-						<td class="text-center">
-							<span
-								class="text-base {product.quarter_over_quarter_change && product.quarter_over_quarter_change > 0
-									? 'text-success'
-									: product.quarter_over_quarter_change && product.quarter_over_quarter_change < 0
-										? 'text-error'
-										: 'text-base-content'}"
-							>
-								{product.quarter_over_quarter_change
-									? `${product.quarter_over_quarter_change > 0 ? '+' : ''}${product.quarter_over_quarter_change}%`
-									: 'N/A'}
-							</span>
-						</td>
-					{/each}
-					{#each Array(emptySlots) as _, i}
-						<td class="bg-base-200"></td>
-					{/each}
-				</tr>
+				{/if}
 
 				<!-- Description -->
 				<tr>

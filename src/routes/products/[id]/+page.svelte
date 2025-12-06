@@ -2,38 +2,45 @@
 	import { goto } from '$app/navigation';
 	import ProductDetailView from '$lib/components/ProductDetailView.svelte';
 	import ProductRow from '$lib/components/ProductRow.svelte';
+	import ComparisonBar from '$lib/components/ComparisonBar.svelte';
 	import type { PageData } from './$types';
 	import type { ProductWithRating } from '$lib/helpers/types';
 	import { comparisonStore } from '$lib/stores/comparison';
 
 	let { data }: { data: PageData } = $props();
 
+	// Local state with optimistic updates
 	let isBookmarked = $state(data.isBookmarked);
-	let isInCart = $state(data.isInCart);
+	let cartQuantity = $state(data.cartQuantity || 0);
 	
 	// Track if product is in comparison
 	let isCompared = $state(false);
 
+	// Update cart quantity when data changes (e.g., navigation)
+	$effect(() => {
+		cartQuantity = data.cartQuantity || 0;
+	});
+
 	// Subscribe to comparison store
 	$effect(() => {
 		const unsubscribe = comparisonStore.subscribe((state) => {
-			isCompared = data.product ? state.products.some(p => p.id === data.product.id) : false;
+			if (data.product) {
+				// Check all categories for the product
+				isCompared = Object.values(state.productsByCategory).some(
+					products => products.some(p => p.id === data.product.id)
+				);
+			}
 		});
 		return unsubscribe;
 	});
 
 	async function handleCompare() {
 		if (data.product) {
-			// Check if product is already being compared
 			if (isCompared) {
-				// Remove from comparison
 				comparisonStore.remove(data.product.id);
 			} else {
-				// Try to add to comparison
 				const result = comparisonStore.add(data.product);
-				if (result === 'added') {
-					goto('/compare');
-				} else if (result === 'full') {
+				if (result === 'full') {
 					alert('You can only compare up to 3 products at a time. Remove a product from the comparison to add a new one.');
 				}
 			}
@@ -46,21 +53,26 @@
 			return;
 		}
 
-		try {
-			if (data.product) {
-				const response = await fetch('/api/bookmarks', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ productId: data.product.id })
-				});
+		if (!data.product) return;
 
-				if (response.ok) {
-					const result = await response.json();
-					isBookmarked = result.bookmarked;
-				}
+		// Optimistically update UI immediately
+		const wasBookmarked = isBookmarked;
+		isBookmarked = !isBookmarked;
+
+		try {
+			const response = await fetch('/api/bookmarks', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ productId: data.product.id })
+			});
+
+			if (!response.ok) {
+				// Revert on error
+				isBookmarked = wasBookmarked;
+				throw new Error('Failed to bookmark');
 			}
 		} catch (error) {
-			console.error('Failed to toggle bookmark:', error);
+			console.error('Bookmark error:', error);
 		}
 	}
 
@@ -70,20 +82,65 @@
 			return;
 		}
 
+		if (!data.product) return;
+
 		try {
-			if (data.product) {
+			const response = await fetch('/api/cart', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ productId: data.product.id, quantity: 1 })
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to add to cart');
+			}
+
+			// Update local cart quantity
+			cartQuantity = (cartQuantity || 0) + 1;
+		} catch (error) {
+			console.error('Add to cart error:', error);
+			alert('Failed to add to cart. Please try again.');
+		}
+	}
+
+	async function handleUpdateCartQuantity(newQuantity: number) {
+		if (!data.isAuthenticated || !data.product) return;
+
+		const currentQty = cartQuantity;
+		const diff = newQuantity - currentQty;
+
+		// Update local state optimistically FIRST for instant UI feedback
+		cartQuantity = newQuantity;
+
+		try {
+			if (diff > 0) {
+				// Add more
 				const response = await fetch('/api/cart', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ productId: data.product.id, quantity: 1 })
+					body: JSON.stringify({ productId: data.product.id, quantity: diff })
 				});
 
-				if (response.ok) {
-					isInCart = true;
+				if (!response.ok) {
+					throw new Error('Failed to update cart');
+				}
+			} else if (diff < 0) {
+				// Remove items
+				const response = await fetch('/api/cart/product', {
+					method: 'DELETE',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ productId: data.product.id, quantity: Math.abs(diff) })
+				});
+
+				if (!response.ok) {
+					throw new Error('Failed to update cart');
 				}
 			}
 		} catch (error) {
-			console.error('Failed to add to cart:', error);
+			console.error('Update cart error:', error);
+			// Revert optimistic update on error
+			cartQuantity = currentQty;
+			alert('Failed to update cart. Please try again.');
 		}
 	}
 
@@ -98,13 +155,15 @@
 			product={data.product}
 			features={data.features}
 			reviews={data.reviews}
+			categoryMetrics={data.categoryMetrics}
 			averageRating={data.averageRating}
 			{isBookmarked}
 			{isCompared}
-			{isInCart}
+			{cartQuantity}
 			oncompare={handleCompare}
 			onbookmark={handleBookmark}
 			onaddtocart={handleAddToCart}
+			onupdatecartquantity={handleUpdateCartQuantity}
 		/>
 
 		<!-- Similar Products Section -->
@@ -127,3 +186,6 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Comparison Bar -->
+<ComparisonBar />
