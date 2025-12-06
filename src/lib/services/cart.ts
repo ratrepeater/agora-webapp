@@ -1,11 +1,14 @@
-import { supabase } from '$lib/helpers/supabase';
 import type { CartItem, CartItemWithProduct, ProductWithRating } from '$lib/helpers/types';
+import { analyticsService } from './analytics';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * CartService - Handles all cart-related database operations
  * Implements addItem, updateQuantity, removeItem, clear, getItems, and getTotal methods
  */
 export class CartService {
+	constructor(private supabase: SupabaseClient) {}
+
 	/**
 	 * Get or create a cart for a buyer
 	 * @param buyerId - Buyer's profile ID
@@ -13,7 +16,7 @@ export class CartService {
 	 */
 	private async getOrCreateCart(buyerId: string): Promise<string> {
 		// Try to find an open cart
-		const { data: existingCart, error: findError } = await supabase
+		const { data: existingCart, error: findError } = await this.supabase
 			.from('carts')
 			.select('id')
 			.eq('buyer_id', buyerId)
@@ -29,7 +32,7 @@ export class CartService {
 		}
 
 		// Create a new cart if none exists
-		const { data: newCart, error: createError } = await supabase
+		const { data: newCart, error: createError } = await this.supabase
 			.from('carts')
 			.insert({ buyer_id: buyerId, status: 'open' })
 			.select('id')
@@ -50,7 +53,7 @@ export class CartService {
 	async getItems(buyerId: string): Promise<CartItemWithProduct[]> {
 		const cartId = await this.getOrCreateCart(buyerId);
 
-		const { data, error } = await supabase
+		const { data, error } = await this.supabase
 			.from('cart_items')
 			.select(
 				`
@@ -121,7 +124,7 @@ export class CartService {
 		const cartId = await this.getOrCreateCart(buyerId);
 
 		// Get product price
-		const { data: product, error: productError } = await supabase
+		const { data: product, error: productError } = await this.supabase
 			.from('products')
 			.select('price_cents')
 			.eq('id', productId)
@@ -132,7 +135,7 @@ export class CartService {
 		}
 
 		// Check if item already exists in cart
-		const { data: existingItem, error: checkError } = await supabase
+		const { data: existingItem, error: checkError } = await this.supabase
 			.from('cart_items')
 			.select('*')
 			.eq('cart_id', cartId)
@@ -146,7 +149,7 @@ export class CartService {
 		// If item exists, update quantity
 		if (existingItem) {
 			const newQuantity = existingItem.quantity + quantity;
-			const { data, error } = await supabase
+			const { data, error } = await this.supabase
 				.from('cart_items')
 				.update({ quantity: newQuantity })
 				.eq('id', existingItem.id)
@@ -161,7 +164,7 @@ export class CartService {
 		}
 
 		// Otherwise, create new cart item
-		const { data, error } = await supabase
+		const { data, error } = await this.supabase
 			.from('cart_items')
 			.insert({
 				cart_id: cartId,
@@ -175,6 +178,9 @@ export class CartService {
 		if (error) {
 			throw new Error(`Failed to add cart item: ${error.message}`);
 		}
+
+		// Track cart add event
+		await analyticsService.trackCartAdd(productId, buyerId);
 
 		return data;
 	}
@@ -190,7 +196,7 @@ export class CartService {
 			throw new Error('Quantity must be greater than 0');
 		}
 
-		const { data, error } = await supabase
+		const { data, error } = await this.supabase
 			.from('cart_items')
 			.update({ quantity })
 			.eq('id', itemId)
@@ -209,7 +215,7 @@ export class CartService {
 	 * @param itemId - Cart item ID to remove
 	 */
 	async removeItem(itemId: string): Promise<void> {
-		const { error } = await supabase.from('cart_items').delete().eq('id', itemId);
+		const { error } = await this.supabase.from('cart_items').delete().eq('id', itemId);
 
 		if (error) {
 			throw new Error(`Failed to remove cart item: ${error.message}`);
@@ -223,13 +229,10 @@ export class CartService {
 	async clear(buyerId: string): Promise<void> {
 		const cartId = await this.getOrCreateCart(buyerId);
 
-		const { error } = await supabase.from('cart_items').delete().eq('cart_id', cartId);
+		const { error } = await this.supabase.from('cart_items').delete().eq('cart_id', cartId);
 
 		if (error) {
 			throw new Error(`Failed to clear cart: ${error.message}`);
 		}
 	}
 }
-
-// Export a singleton instance
-export const cartService = new CartService();

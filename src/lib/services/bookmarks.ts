@@ -1,18 +1,20 @@
-import { supabase } from '$lib/helpers/supabase';
 import type { Bookmark, BookmarkWithProduct, ProductWithRating } from '$lib/helpers/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * BookmarkService - Handles all bookmark-related database operations
  * Implements add, remove, toggle, and query methods for bookmarks
  */
 export class BookmarkService {
+	constructor(private supabase: SupabaseClient) {}
+
 	/**
 	 * Get all bookmarks for a buyer with product details
 	 * @param buyerId - Buyer's profile ID
 	 * @returns Array of bookmarks with product information
 	 */
 	async getByBuyer(buyerId: string): Promise<BookmarkWithProduct[]> {
-		const { data, error } = await supabase
+		const { data, error } = await this.supabase
 			.from('bookmarks')
 			.select(
 				`
@@ -30,9 +32,9 @@ export class BookmarkService {
 			throw new Error(`Failed to fetch bookmarks: ${error.message}`);
 		}
 
-		// Enrich products with ratings
-		return (data || []).map((bookmark) => {
-			const product = bookmark.product as any;
+		// Return bookmarks with products and calculated ratings
+		return (data || []).map((bookmark: any) => {
+			const product = bookmark.product;
 			const reviews = product?.reviews || [];
 			const ratings = reviews.map((r: any) => r.rating).filter((r: number) => r != null);
 
@@ -45,6 +47,7 @@ export class BookmarkService {
 			const { reviews: _, ...productData } = product;
 
 			return {
+				id: bookmark.buyer_id + bookmark.product_id, // Composite key for bookmark
 				buyer_id: bookmark.buyer_id,
 				product_id: bookmark.product_id,
 				created_at: bookmark.created_at,
@@ -53,7 +56,7 @@ export class BookmarkService {
 					average_rating,
 					review_count
 				} as ProductWithRating
-			} as BookmarkWithProduct;
+			};
 		});
 	}
 
@@ -64,7 +67,7 @@ export class BookmarkService {
 	 * @returns True if bookmarked, false otherwise
 	 */
 	async isBookmarked(buyerId: string, productId: string): Promise<boolean> {
-		const { data, error } = await supabase
+		const { data, error } = await this.supabase
 			.from('bookmarks')
 			.select('buyer_id')
 			.eq('buyer_id', buyerId)
@@ -85,7 +88,7 @@ export class BookmarkService {
 	 * @returns Created bookmark
 	 */
 	async add(buyerId: string, productId: string): Promise<Bookmark> {
-		const { data, error } = await supabase
+		const { data, error } = await this.supabase
 			.from('bookmarks')
 			.insert({
 				buyer_id: buyerId,
@@ -98,6 +101,10 @@ export class BookmarkService {
 			throw new Error(`Failed to add bookmark: ${error.message}`);
 		}
 
+		// Track bookmark event
+		// TODO: Fix analyticsService to accept supabase client
+		// await analyticsService.trackBookmark(productId, buyerId);
+
 		return data;
 	}
 
@@ -107,7 +114,7 @@ export class BookmarkService {
 	 * @param productId - Product ID to unbookmark
 	 */
 	async remove(buyerId: string, productId: string): Promise<void> {
-		const { error } = await supabase
+		const { error } = await this.supabase
 			.from('bookmarks')
 			.delete()
 			.eq('buyer_id', buyerId)
@@ -136,6 +143,3 @@ export class BookmarkService {
 		}
 	}
 }
-
-// Export a singleton instance
-export const bookmarkService = new BookmarkService();

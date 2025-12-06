@@ -6,23 +6,35 @@
 		selectedCategory?: ProductCategory | null;
 		searchQuery?: string;
 		filters?: ProductFilters;
-		oncategoryChange?: (category: ProductCategory | null) => void;
-		onsearchChange?: (query: string) => void;
-		onfilterChange?: (filters: ProductFilters) => void;
-		onclearFilters?: () => void;
+		oncategorychange?: (category: ProductCategory | null) => void;
+		onsearchchange?: (query: string) => void;
+		onfilterchange?: (filters: ProductFilters) => void;
+		onclearfilters?: () => void;
 	}
 
 	let {
-		categories = ['HR', 'Law', 'Office', 'DevTools'],
-		selectedCategory = $bindable(null),
-		searchQuery = $bindable(''),
-		filters = $bindable({}),
-		oncategoryChange,
-		onsearchChange,
-		onfilterChange,
-		onclearFilters
+		categories = ['hr', 'legal', 'marketing', 'devtools'],
+		selectedCategory = null,
+		searchQuery = '',
+		filters = {},
+		oncategorychange,
+		onsearchchange,
+		onfilterchange,
+		onclearfilters
 	}: Props = $props();
 
+	// Map category keys to display names
+	const categoryDisplayNames: Record<string, string> = {
+		hr: 'HR',
+		legal: 'Legal',
+		marketing: 'Marketing',
+		devtools: 'DevTools'
+	};
+
+	// Local state for category and search
+	let localSelectedCategory = $state(selectedCategory);
+	let localSearchQuery = $state(searchQuery);
+	
 	// Local state for additional filters
 	let minPrice = $state(filters.minPrice ?? undefined);
 	let maxPrice = $state(filters.maxPrice ?? undefined);
@@ -30,20 +42,32 @@
 	let featuredOnly = $state(filters.featured ?? false);
 	let newOnly = $state(filters.new ?? false);
 
+	// Sync local state with props when they change
+	$effect(() => {
+		localSelectedCategory = selectedCategory;
+	});
+
+	$effect(() => {
+		localSearchQuery = searchQuery;
+	});
+
 	// Debounce timer for search
 	let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 	const DEBOUNCE_DELAY = 300; // milliseconds
 
 	// Handle category selection
 	function handleCategoryChange(category: ProductCategory | null) {
-		selectedCategory = category;
-		oncategoryChange?.(category);
+		console.log('FilterPanel: handleCategoryChange called with:', category);
+		console.log('FilterPanel: oncategorychange callback exists?', !!oncategorychange);
+		localSelectedCategory = category;
+		oncategorychange?.(category);
 	}
 
 	// Handle search input with debouncing
 	function handleSearchInput(event: Event) {
 		const target = event.target as HTMLInputElement;
 		const value = target.value;
+		localSearchQuery = value; // Update immediately for UI
 
 		// Clear existing timer
 		if (searchDebounceTimer) {
@@ -52,15 +76,14 @@
 
 		// Set new timer
 		searchDebounceTimer = setTimeout(() => {
-			searchQuery = value;
-			onsearchChange?.(value);
+			onsearchchange?.(value);
 		}, DEBOUNCE_DELAY);
 	}
 
 	// Handle additional filter changes
 	function handleFilterChange() {
 		const newFilters: ProductFilters = {
-			category: selectedCategory ?? undefined,
+			category: localSelectedCategory ?? undefined,
 			minPrice: minPrice !== undefined && minPrice !== null ? minPrice : undefined,
 			maxPrice: maxPrice !== undefined && maxPrice !== null ? maxPrice : undefined,
 			minRating: minRating !== undefined && minRating !== null ? minRating : undefined,
@@ -75,27 +98,25 @@
 			}
 		});
 
-		filters = newFilters;
-		onfilterChange?.(newFilters);
+		onfilterchange?.(newFilters);
 	}
 
 	// Handle clear all filters
 	function handleClearFilters() {
-		selectedCategory = null;
-		searchQuery = '';
+		localSelectedCategory = null;
+		localSearchQuery = '';
 		minPrice = undefined;
 		maxPrice = undefined;
 		minRating = undefined;
 		featuredOnly = false;
 		newOnly = false;
-		filters = {};
-		onclearFilters?.();
+		onclearfilters?.();
 	}
 
 	// Check if any filters are active
 	let hasActiveFilters = $derived(
-		selectedCategory !== null ||
-			searchQuery !== '' ||
+		localSelectedCategory !== null ||
+			localSearchQuery !== '' ||
 			minPrice !== undefined ||
 			maxPrice !== undefined ||
 			minRating !== undefined ||
@@ -118,7 +139,7 @@
 				type="search"
 				placeholder="Search products..."
 				class="input input-bordered w-full"
-				value={searchQuery}
+				value={localSearchQuery}
 				oninput={handleSearchInput}
 			/>
 		</div>
@@ -130,17 +151,17 @@
 			</div>
 			<div class="flex flex-wrap gap-2">
 				<button
-					class="btn btn-sm {selectedCategory === null ? 'btn-primary' : 'btn-outline'}"
+					class="btn btn-sm {localSelectedCategory === null ? 'btn-primary' : 'btn-outline'}"
 					onclick={() => handleCategoryChange(null)}
 				>
 					All
 				</button>
 				{#each categories as category}
 					<button
-						class="btn btn-sm {selectedCategory === category ? 'btn-primary' : 'btn-outline'}"
+						class="btn btn-sm {localSelectedCategory === category ? 'btn-primary' : 'btn-outline'}"
 						onclick={() => handleCategoryChange(category)}
 					>
-						{category}
+						{categoryDisplayNames[category] || category}
 					</button>
 				{/each}
 			</div>

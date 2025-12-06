@@ -1,114 +1,20 @@
-import { describe, test, expect, beforeAll, afterEach } from 'vitest';
+import { describe, test, expect, beforeAll, afterEach, afterAll } from 'vitest';
 import * as fc from 'fast-check';
 import { bookmarkService } from './bookmarks';
 import { supabaseTest } from '$lib/test-utils/supabase-test';
 import { seedCategories } from '$lib/test-utils/seed-categories';
+import {
+	createTestBuyer,
+	createTestSeller,
+	createTestProduct,
+	cleanupBuyerData,
+	cleanupAllTestData
+} from '$lib/test-utils/test-data-helpers';
 
 /**
  * Property-based tests for BookmarkService
  * These tests verify universal properties that should hold across all inputs
  */
-
-// Helper to create a test buyer profile
-async function ensureTestBuyer(name: string = 'Test Buyer'): Promise<string> {
-	const testEmail = `testbuyer-${Date.now()}-${Math.random()}@test.com`;
-	const testPassword = 'TestPassword123!';
-
-	// Create auth user using admin API (bypasses email confirmation)
-	const { data: authData, error: authError } = await supabaseTest.auth.admin.createUser({
-		email: testEmail,
-		password: testPassword,
-		email_confirm: true,
-		user_metadata: {
-			full_name: name
-		}
-	});
-
-	if (authError || !authData.user) {
-		throw new Error(`Failed to create test buyer: ${authError?.message}`);
-	}
-
-	// Update the profile to be a buyer
-	await supabaseTest
-		.from('profiles')
-		.update({ role_buyer: true, role_seller: false, full_name: name })
-		.eq('id', authData.user.id);
-
-	return authData.user.id;
-}
-
-// Helper to create a test seller profile
-async function ensureTestSeller(): Promise<string> {
-	const testEmail = `testseller-${Date.now()}-${Math.random()}@test.com`;
-	const testPassword = 'TestPassword123!';
-
-	const { data: authData, error: authError } = await supabaseTest.auth.admin.createUser({
-		email: testEmail,
-		password: testPassword,
-		email_confirm: true,
-		user_metadata: {
-			full_name: 'Test Seller'
-		}
-	});
-
-	if (authError || !authData.user) {
-		throw new Error(`Failed to create test seller: ${authError?.message}`);
-	}
-
-	await supabaseTest
-		.from('profiles')
-		.update({ role_seller: true, role_buyer: false, full_name: 'Test Seller' })
-		.eq('id', authData.user.id);
-
-	return authData.user.id;
-}
-
-// Helper to create a test product
-async function createTestProduct(sellerId: string, name: string = 'Test Product'): Promise<string> {
-	const { data: categoryData } = await supabaseTest
-		.from('categories')
-		.select('id')
-		.eq('key', 'hr')
-		.single();
-
-	if (!categoryData) {
-		throw new Error('Failed to get category');
-	}
-
-	const { data, error } = await supabaseTest
-		.from('products')
-		.insert({
-			name,
-			short_description: 'Test product description',
-			price_cents: 1000,
-			seller_id: sellerId,
-			category_id: categoryData.id,
-			status: 'published'
-		})
-		.select()
-		.single();
-
-	if (error || !data) {
-		throw new Error(`Failed to create test product: ${error?.message}`);
-	}
-
-	return data.id;
-}
-
-// Helper to clean up test bookmarks
-async function cleanupTestBookmarks(buyerId: string) {
-	await supabaseTest.from('bookmarks').delete().eq('buyer_id', buyerId);
-}
-
-// Helper to clean up test products
-async function cleanupTestProducts(sellerId: string) {
-	await supabaseTest.from('products').delete().eq('seller_id', sellerId);
-}
-
-// Helper to clean up test users
-async function cleanupTestUser(userId: string) {
-	await supabaseTest.auth.admin.deleteUser(userId);
-}
 
 describe('BookmarkService Property-Based Tests', () => {
 	let testBuyerId: string;
@@ -117,14 +23,18 @@ describe('BookmarkService Property-Based Tests', () => {
 
 	beforeAll(async () => {
 		await seedCategories();
-		testBuyerId = await ensureTestBuyer();
-		testSellerId = await ensureTestSeller();
+		testBuyerId = await createTestBuyer('Test Buyer for Bookmarks');
+		testSellerId = await createTestSeller('Test Seller for Bookmarks');
 		testProductId = await createTestProduct(testSellerId);
 	});
 
 	afterEach(async () => {
-		await cleanupTestBookmarks(testBuyerId);
-	});
+		await cleanupBuyerData(testBuyerId);
+	}, 30000); // 30 second timeout for cleanup
+
+	afterAll(async () => {
+		await cleanupAllTestData();
+	}, 30000); // 30 second timeout for cleanup
 
 	// Feature: startup-marketplace, Property 45: Bookmark data round-trip
 	// Validates: Requirements 21.2
@@ -293,9 +203,9 @@ describe('BookmarkService Property-Based Tests', () => {
 	test('Property 8: List modification invariant (bookmarks) - adding increases list size by 1, removing decreases by 1', async () => {
 		// Create multiple test products for this test
 		const productIds = await Promise.all([
-			createTestProduct(testSellerId, 'Product 1'),
-			createTestProduct(testSellerId, 'Product 2'),
-			createTestProduct(testSellerId, 'Product 3')
+			createTestProduct(testSellerId, { name: 'Product 1' }),
+			createTestProduct(testSellerId, { name: 'Product 2' }),
+			createTestProduct(testSellerId, { name: 'Product 3' })
 		]);
 
 		await fc.assert(
@@ -348,10 +258,5 @@ describe('BookmarkService Property-Based Tests', () => {
 			}),
 			{ numRuns: 100 }
 		);
-
-		// Cleanup the extra products
-		for (const productId of productIds) {
-			await supabaseTest.from('products').delete().eq('id', productId);
-		}
 	}, 60000);
 });

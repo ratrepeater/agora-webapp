@@ -6,10 +6,10 @@ import { supabaseTest } from './supabase-test';
  */
 export async function seedCategories() {
 	const categories = [
-		{ key: 'hr', name: 'HR', description: 'Human Resources tools and services' },
-		{ key: 'law', name: 'Law', description: 'Legal services and tools' },
-		{ key: 'office', name: 'Office', description: 'Office space and facilities' },
-		{ key: 'devtools', name: 'DevTools', description: 'Development tools and services' }
+		{ key: 'hr', name: 'HR Tools', description: 'Human Resources tools and services' },
+		{ key: 'legal', name: 'Legal Tools', description: 'Legal services and tools' },
+		{ key: 'marketing', name: 'Marketing Tools', description: 'Marketing automation and analytics platforms' },
+		{ key: 'devtools', name: 'Developer Tools', description: 'Development tools and services' }
 	];
 
 	// Check if categories already exist

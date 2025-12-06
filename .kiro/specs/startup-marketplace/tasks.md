@@ -78,7 +78,7 @@ This implementation plan breaks down the Startup Marketplace feature into discre
     - Implement sign-in, sign-up, sign-out functions for sellers
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 11.1, 11.2, 11.3, 11.4_
   
-  - [x] 5.2 Implement route protection
+    - [x] 5.2 Implement route protection
     - Create +layout.server.ts with session checking
     - Add redirect logic for unauthenticated users
     - Add role-based authorization checks
@@ -236,49 +236,49 @@ This implementation plan breaks down the Startup Marketplace feature into discre
     - Display empty state for no orders
     - _Requirements: 8.1, 8.2, 8.3_
 
-- [ ] 10. Implement review functionality
-  - [ ] 10.1 Create ReviewService
+- [-] 10. Implement review functionality
+  - [x] 10.1 Create ReviewService
     - Implement create, update, delete methods
     - Implement getByProduct, getByBuyer, getAverageRating methods
     - Add database persistence to reviews table
     - _Requirements: 9.1, 9.2_
   
-  - [ ] 10.2 Write property test for review data round-trip
+  - [x] 10.2 Write property test for review data round-trip
     - **Property 48: Review data round-trip**
     - **Validates: Requirements 21.5**
   
-  - [ ] 10.3 Write property test for review display completeness
+  - [x] 10.3 Write property test for review display completeness
     - **Property 15: Review display completeness**
     - **Validates: Requirements 9.1**
   
-  - [ ] 10.4 Write property test for average rating accuracy
+  - [x] 10.4 Write property test for average rating accuracy
     - **Property 16: Average rating accuracy**
     - **Validates: Requirements 9.2**
   
-  - [ ] 10.5 Create ReviewList component
+  - [x] 10.5 Create ReviewList component
     - Display reviews with reviewer name, rating, text
     - Display average rating
     - Display empty state for no reviews
     - Add review submission form (if buyer can review)
     - _Requirements: 9.1, 9.2, 9.3_
 
-- [ ] 11. Checkpoint - Ensure all tests pass
+- [x] 11. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Implement comparison functionality
-  - [ ] 12.1 Create comparison store
+- [-] 12. Implement comparison functionality
+  - [x] 12.1 Create comparison store
     - Implement client-side store for comparison list
     - Add methods to add, remove, clear products
     - Enforce 3-product maximum
     - Persist to localStorage for session continuity
     - _Requirements: 5.1, 5.2, 5.4_
   
-  - [ ] 12.2 Write property test for list modification invariant (comparison)
+  - [x] 12.2 Write property test for list modification invariant (comparison)
     - **Property 8: List modification invariant**
     - **Validates: Requirements 5.4**
 
-- [ ] 13. Implement recommendation system
-  - [ ] 13.1 Create RecommendationService
+- [x] 13. Implement recommendation system
+  - [x] 13.1 Create RecommendationService
     - Implement getNewAndNotable based on created_at and featured status
     - Implement getPersonalized based on buyer profile and behavior
     - Implement getFrequentlyBoughtTogether based on order history
@@ -286,89 +286,89 @@ This implementation plan breaks down the Startup Marketplace feature into discre
     - Implement getTrending based on recent engagement
     - _Requirements: 14.1, 14.2, 14.3, 14.4_
   
-  - [ ] 13.2 Write property test for recommendation prioritization
+  - [x] 13.2 Write property test for recommendation prioritization
     - **Property 26: Recommendation prioritization**
     - **Validates: Requirements 14.5**
 
-- [ ] 14. Implement seller product management
-  - [ ] 14.1 Create product creation form
+- [x] 14. Implement seller product management
+  - [x] 14.1 Create product creation form
     - Build form with all required fields (name, description, price, metrics, etc.)
     - Add file upload for logo and demo visual
     - Implement form validation
     - Call ProductService.create on submission
     - _Requirements: 12.1, 12.2, 12.3, 12.5_
   
-  - [ ] 14.2 Write property test for product creation visibility
+  - [x] 14.2 Write property test for product creation visibility
     - **Property 18: Product creation visibility**
     - **Validates: Requirements 12.2**
   
-  - [ ] 14.3 Write property test for form validation completeness
+  - [x] 14.3 Write property test for form validation completeness
     - **Property 19: Form validation completeness**
     - **Validates: Requirements 12.3**
   
-  - [ ] 14.4 Write property test for product categorization
+  - [x] 14.4 Write property test for product categorization
     - **Property 20: Product categorization**
     - **Validates: Requirements 12.4**
   
-  - [ ] 14.5 Write property test for file upload validation
+  - [x] 14.5 Write property test for file upload validation
     - **Property 21: File upload validation**
     - **Validates: Requirements 12.5**
   
-  - [ ] 14.2 Create product management page
+  - [x] 14.2 Create product management page
     - Display all seller products in a list
     - Add edit and delete buttons for each product
     - Implement product update form
     - Implement product deletion with confirmation
     - _Requirements: 17.1, 17.2, 17.3_
   
-  - [ ] 14.6 Write property test for product update visibility
+  - [x] 14.6 Write property test for product update visibility
     - **Property 33: Product update visibility**
     - **Validates: Requirements 17.2**
   
-  - [ ] 14.7 Write property test for product deletion behavior
+  - [x] 14.7 Write property test for product deletion behavior
     - **Property 34: Product deletion behavior**
     - **Validates: Requirements 17.3**
 
-- [ ] 15. Implement analytics system
-  - [ ] 15.1 Create AnalyticsService
+- [-] 15. Implement analytics system
+  - [x] 15.1 Create AnalyticsService
     - Implement tracking methods (trackProductView, trackBookmark, trackCartAdd, trackPurchase)
     - Implement getProductAnalytics with traffic, engagement, conversion metrics
     - Implement getSellerDashboard with overview and performance data
     - Add database persistence to product_analytics table
     - _Requirements: 16.1, 17.4_
   
-  - [ ] 15.2 Write property test for analytics data round-trip
+  - [x] 15.2 Write property test for analytics data round-trip
     - **Property 49: Analytics data round-trip**
     - **Validates: Requirements 21.8**
   
-  - [ ] 15.3 Write property test for seller analytics completeness
+  - [x] 15.3 Write property test for seller analytics completeness
     - **Property 30: Seller analytics completeness**
     - **Validates: Requirements 16.1**
   
-  - [ ] 15.4 Write property test for product performance metrics display
+  - [x] 15.4 Write property test for product performance metrics display
     - **Property 35: Product performance metrics display**
     - **Validates: Requirements 17.4**
   
-  - [ ] 15.5 Create seller analytics dashboard page
+  - [x] 15.5 Create seller analytics dashboard page
     - Display product views, conversions, revenue metrics
     - Display time-series charts for trends
     - Display top and underperforming products
     - _Requirements: 16.1, 17.4_
 
-- [ ] 16. Implement competitor analysis
-  - [ ] 16.1 Create competitor identification logic
+- [-] 16. Implement competitor analysis
+  - [x] 16.1 Create competitor identification logic
     - Implement algorithm to identify competitors based on category and similarity
     - Calculate similarity_score and market_overlap_score
     - Store relationships in competitor_relationships table
     - _Requirements: 16.2_
   
-  - [ ] 16.2 Implement getCompetitorAnalysis method
+  - [x] 16.2 Implement getCompetitorAnalysis method
     - Fetch competitor products with comparative metrics
     - Calculate price, feature, metric, and score comparisons
     - Generate improvement suggestions based on gaps
     - _Requirements: 16.2, 16.3_
   
-  - [ ] 16.3 Write property test for competitor analysis completeness
+  - [x] 16.3 Write property test for competitor analysis completeness
     - **Property 31: Competitor analysis completeness**
     - **Validates: Requirements 16.2**
   
@@ -378,63 +378,63 @@ This implementation plan breaks down the Startup Marketplace feature into discre
     - Display improvement suggestions
     - _Requirements: 16.2, 16.3, 16.4_
 
-- [ ] 17. Implement buyer dashboard
-  - [ ] 17.1 Create buyer product usage tracking
+- [x] 17. Implement buyer dashboard
+  - [x] 17.1 Create buyer product usage tracking
     - Implement methods to track implementation status, usage count, ROI
     - Add database persistence to buyer_product_usage table
     - Implement feedback submission
     - _Requirements: 15.1, 15.2, 15.3, 15.4_
   
-  - [ ] 17.2 Write property test for buyer dashboard completeness
+  - [x] 17.2 Write property test for buyer dashboard completeness
     - **Property 27: Buyer dashboard completeness**
     - **Validates: Requirements 15.1**
   
-  - [ ] 17.3 Write property test for product performance display
+  - [x] 17.3 Write property test for product performance display
     - **Property 28: Product performance display**
     - **Validates: Requirements 15.2**
   
-  - [ ] 17.4 Write property test for feedback persistence
+  - [x] 17.4 Write property test for feedback persistence
     - **Property 29: Feedback persistence**
     - **Validates: Requirements 15.4**
   
-  - [ ] 17.5 Create buyer dashboard page
+  - [x] 17.5 Create buyer dashboard page
     - Display purchased products with usage metrics
     - Display implementation status and ROI data
     - Display time-series charts for performance tracking
     - Add feedback submission form
     - _Requirements: 15.1, 15.2, 15.3, 15.4_
 
-- [ ] 18. Implement download functionality
-  - [ ] 18.1 Create DownloadService
+- [x] 18. Implement download functionality
+  - [x] 18.1 Create DownloadService
     - Implement getDownloadUrl with authentication verification
     - Implement trackDownload to record download events
     - Implement uploadProductFile for sellers
     - Add database persistence to product_downloads table
     - _Requirements: 18.1, 18.2, 18.4_
   
-  - [ ] 18.2 Write property test for download availability after purchase
+  - [x] 18.2 Write property test for download availability after purchase
     - **Property 36: Download availability after purchase**
     - **Validates: Requirements 18.1, 18.2**
   
-  - [ ] 18.3 Write property test for download tracking
+  - [x] 18.3 Write property test for download tracking
     - **Property 37: Download tracking**
     - **Validates: Requirements 18.4**
   
-  - [ ] 18.4 Add download links to order confirmation and history
+  - [x] 18.4 Add download links to order confirmation and history
     - Display download buttons on order confirmation page
     - Display download links in order history
     - Track downloads when links clicked
     - _Requirements: 18.1, 18.2_
 
-- [ ] 19. Implement quote system
-  - [ ] 19.1 Create QuoteService
+- [-] 19. Implement quote system
+  - [x] 19.1 Create QuoteService
     - Implement generateQuote with automated pricing rules
     - Implement acceptQuote to convert to cart item
     - Implement quote management methods
     - Add database persistence to quotes table
     - _Requirements: 19.1, 19.2, 19.3, 19.4_
   
-  - [ ] 19.2 Write property test for quote UI conditional display
+  - [x] 19.2 Write property test for quote UI conditional display
     - **Property 38: Quote UI conditional display**
     - **Validates: Requirements 19.1**
   
@@ -446,7 +446,7 @@ This implementation plan breaks down the Startup Marketplace feature into discre
     - **Property 40: Quote display completeness**
     - **Validates: Requirements 19.3**
   
-  - [ ] 19.5 Write property test for quote acceptance creates cart item
+  - [x] 19.5 Write property test for quote acceptance creates cart item
     - **Property 41: Quote acceptance creates cart item**
     - **Validates: Requirements 19.4**
   
@@ -457,178 +457,212 @@ This implementation plan breaks down the Startup Marketplace feature into discre
     - Add accept and reject buttons
     - _Requirements: 19.1, 19.2, 19.3, 19.4_
 
-- [ ] 20. Implement bundle system
-  - [ ] 20.1 Create BundleService
+- [-] 20. Implement bundle system
+  - [x] 20.1 Create BundleService
     - Implement getSuggestedBundles based on cart contents
     - Implement getFrequentlyBoughtTogether for bundle suggestions
     - Implement calculateBundlePrice with discount tiers
     - Add database persistence to bundles and bundle_products tables
     - _Requirements: 20.1, 20.2, 20.3_
   
-  - [ ] 20.2 Write property test for bundle pricing correctness
+  - [x] 20.2 Write property test for bundle pricing correctness
     - **Property 42: Bundle pricing correctness**
     - **Validates: Requirements 20.2**
   
-  - [ ] 20.3 Write property test for bundle purchase atomicity
+  - [x] 20.3 Write property test for bundle purchase atomicity
     - **Property 43: Bundle purchase atomicity**
     - **Validates: Requirements 20.4**
   
-  - [ ] 20.4 Create BundleSuggestion component
+  - [x] 20.4 Create BundleSuggestion component
     - Display suggested bundles with products and pricing
     - Show discount percentage
     - Add button to add bundle to cart
     - _Requirements: 20.1, 20.2, 20.3_
 
-- [ ] 21. Build main pages and routing
-  - [ ] 21.1 Create homepage (+page.svelte)
+- [x] 21. Build main pages and routing
+  - [x] 21.1 Create homepage (+page.svelte)
     - Display multiple ProductRow components (New, Featured, Recommended)
     - Load data in +page.server.ts using RecommendationService
     - _Requirements: 1.1, 1.2, 1.3, 14.1, 14.2_
   
-  - [ ] 21.2 Write property test for navigation presence
+  - [x] 21.2 Write property test for navigation presence
     - **Property 22: Navigation presence**
     - **Validates: Requirements 13.1**
   
-  - [ ] 21.3 Write property test for navigation functionality
+  - [x] 21.3 Write property test for navigation functionality
     - **Property 23: Navigation functionality**
     - **Validates: Requirements 13.2**
   
-  - [ ] 21.4 Write property test for active navigation highlighting
+  - [x] 21.4 Write property test for active navigation highlighting
     - **Property 24: Active navigation highlighting**
     - **Validates: Requirements 13.3**
   
-  - [ ] 21.5 Create marketplace page
+  - [x] 21.5 Create marketplace page
     - Display products in grid layout
     - Add FilterPanel component
     - Load data in +page.server.ts using ProductService
     - Handle filter and search query parameters
     - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.3_
   
-  - [ ] 21.6 Create product detail page ([id]/+page.svelte)
+  - [x] 21.6 Create product detail page ([id]/+page.svelte)
     - Display ProductDetailView component
     - Load product, features, reviews, similar products in +page.server.ts
     - Add compare, bookmark, add to cart functionality
     - _Requirements: 1.4, 4.1, 4.2, 4.3, 4.4_
   
-  - [ ] 21.7 Create comparison page
+  - [x] 21.7 Create comparison page
     - Display ComparisonTable component
     - Load comparison products from store
     - Handle empty state
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
   
-  - [ ] 21.8 Create bookmarks page
+  - [x] 21.8 Create bookmarks page
     - Display bookmarked products in grid
     - Load data in +page.server.ts using BookmarkService
     - Add remove bookmark functionality
     - _Requirements: 6.3, 6.4_
   
-  - [ ] 21.9 Create cart page
+  - [x] 21.9 Create cart page
     - Display CartSummary component
     - Add checkout button that navigates to checkout
     - _Requirements: 7.2, 7.3_
   
-  - [ ] 21.10 Create checkout page
+  - [x] 21.10 Create checkout page
     - Display order summary
     - Process demo transaction on submit
     - Redirect to order confirmation with download links
     - _Requirements: 7.4, 7.5, 18.1_
   
-  - [ ] 21.11 Create orders page
+  - [x] 21.11 Create orders page
     - Display OrderHistoryList component
     - Load data in +page.server.ts using OrderService
     - _Requirements: 8.1, 8.2, 8.3_
   
-  - [ ] 21.12 Create buyer dashboard page
+  - [x] 21.12 Create buyer dashboard page
     - Display purchased products with performance metrics
     - Load data in +page.server.ts using AnalyticsService
     - _Requirements: 15.1, 15.2, 15.3, 15.4_
   
-  - [ ] 21.13 Create seller dashboard page
+  - [x] 21.13 Create seller dashboard page
     - Display analytics overview
     - Load data in +page.server.ts using AnalyticsService
     - _Requirements: 16.1, 17.4_
   
-  - [ ] 21.14 Create seller products page
+  - [x] 21.14 Create seller products page
     - Display product management interface
     - Add create, edit, delete functionality
     - _Requirements: 12.1, 17.1, 17.2, 17.3_
   
-  - [ ] 21.15 Create seller competitor analysis page
+  - [x] 21.15 Create seller competitor analysis page
     - Display competitor analysis data
     - Load data in +page.server.ts using AnalyticsService
     - _Requirements: 16.2, 16.3, 16.4_
   
-  - [ ] 21.16 Create auth pages (signin, signup, signout)
+  - [x] 21.16 Create auth pages (signin, signup, signout)
     - Build sign-in forms for buyers and sellers
     - Build sign-up forms with role selection
     - Implement sign-out functionality
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 11.1, 11.2, 11.3, 11.4_
 
-- [ ] 22. Implement search functionality
-  - [ ] 22.1 Add search to NavShell
+- [x] 22. Implement search functionality
+  - [x] 22.1 Add search to NavShell
     - Add search input with debouncing
     - Navigate to marketplace with search query parameter
     - _Requirements: 3.1, 13.1_
   
-  - [ ] 22.2 Enhance ProductService.search
+  - [x] 22.2 Enhance ProductService.search
     - Implement full-text search across name, description
     - Support combined search and filter queries
     - Return empty array with no results
     - _Requirements: 3.1, 3.2, 3.4_
 
-- [ ] 23. Add analytics tracking throughout application
-  - [ ] 23.1 Add view tracking
+- [x] 23. Add analytics tracking throughout application
+  - [x] 23.1 Add view tracking
     - Track product views on detail page load
     - Track marketplace page views
     - _Requirements: 16.1_
   
-  - [ ] 23.2 Add interaction tracking
+  - [x] 23.2 Add interaction tracking
     - Track bookmark additions
     - Track cart additions
     - Track comparison additions
     - Track purchases
     - _Requirements: 16.1, 18.4_
 
-- [ ] 24. Implement error handling and validation
-  - [ ] 24.1 Add form validation
+- [x] 24. Implement error handling and validation
+  - [x] 24.1 Add form validation
     - Validate product creation form
     - Validate quote request form
     - Validate review submission form
     - Display validation errors to users
     - _Requirements: 12.3, 12.5_
   
-  - [ ] 24.2 Add error boundaries
+  - [x] 24.2 Add error boundaries
     - Create error pages for 404, 500, etc.
     - Add try-catch blocks in service methods
     - Display user-friendly error messages
     - Log errors for debugging
     - _Requirements: All_
   
-  - [ ] 24.3 Add loading states
+  - [x] 24.3 Add loading states
     - Add loading spinners for async operations
     - Add skeleton screens for page loads
     - Implement optimistic UI updates
     - _Requirements: All_
 
-- [ ] 25. Final checkpoint - Ensure all tests pass
+- [x] 25. Final checkpoint - Ensure all tests pass
+  - Pull database from remote and use that one for tests
+  - Retest all user interactions such as filter (is currently non functional), cart (500 error), reccomendation (carousel is missing), no bundles, no smart bundle carousel, many error code right now, add footer, there are no displayed metrics right now on product cards,  
   - Ensure all tests pass, ask the user if questions arise.
+  - Clean up repository
+  - 
 
-- [ ] 26. Polish and optimization
-  - [ ] 26.1 Optimize performance
+- [x] 26. Fix property-based test infrastructure
+  - [x] 26.1 Create test data setup utilities
+    - Create helper functions to generate test users (buyers and sellers) with proper profiles
+    - Create helper functions to generate test products with valid seller references
+    - Create helper functions to clean up test data after each test
+    - Ensure all test utilities use service role key to bypass RLS
+    - _Requirements: All property-based tests_
+  
+  - [x] 26.2 Fix foreign key constraint violations in tests
+    - Update all property-based tests to create proper user profiles before creating related data
+    - Fix product creation tests to create seller profiles first
+    - Fix bookmark tests to create buyer and product profiles first
+    - Fix review tests to create buyer and product profiles first
+    - Fix cart tests to create buyer and product profiles first
+    - Fix order tests to create buyer, product, and cart data first
+    - _Requirements: All property-based tests_
+  
+  - [x] 26.3 Fix test data generators
+    - Update generators to create valid UUIDs that reference existing database records
+    - Add option to generators to create test data in database before generating test cases
+    - Ensure generators clean up after themselves
+    - _Requirements: All property-based tests_
+  
+  - [x] 26.4 Run all tests and verify they pass
+    - Run full test suite
+    - Fix any remaining test failures
+    - Ensure all property-based tests run with minimum 100 iterations
+    - Verify test cleanup is working properly
+    - _Requirements: All property-based tests_
+
+- [x] 27. Polish and optimization
+  - [x] 27.1 Optimize performance
     - Add database indexes for common queries
     - Implement pagination for product lists
     - Lazy load images with placeholders
     - Add caching for featured products
     - _Requirements: All_
   
-  - [ ] 26.2 Improve accessibility
+  - [x] 27.2 Improve accessibility
     - Add ARIA labels to interactive elements
     - Ensure keyboard navigation works
     - Test with screen readers
     - Verify color contrast ratios
     - _Requirements: All_
   
-  - [ ] 26.3 Responsive design
+  - [x] 27.3 Responsive design
     - Test on mobile, tablet, desktop
     - Adjust layouts for different screen sizes
     - Optimize touch interactions for mobile

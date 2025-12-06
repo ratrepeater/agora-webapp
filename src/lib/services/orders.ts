@@ -1,12 +1,12 @@
-import { supabase } from '$lib/helpers/supabase';
 import type { Order, OrderWithItems, OrderItemWithProduct, CartItemWithProduct, ProductWithRating } from '$lib/helpers/types';
-import { cartService } from './cart';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * OrderService - Handles all order-related database operations
  * Implements create, getByBuyer, and getById methods for demo transactions
  */
 export class OrderService {
+	constructor(private supabase: SupabaseClient) {}
 	/**
 	 * Create a new order from cart items (demo transaction with zero charge)
 	 * @param buyerId - Buyer's profile ID
@@ -24,7 +24,7 @@ export class OrderService {
 		}, 0);
 
 		// Create order (demo transaction with zero charge)
-		const { data: order, error: orderError } = await supabase
+		const { data: order, error: orderError } = await this.supabase
 			.from('orders')
 			.insert({
 				buyer_id: buyerId,
@@ -48,18 +48,18 @@ export class OrderService {
 			subtotal_cents: item.unit_price_cents * item.quantity
 		}));
 
-		const { error: itemsError } = await supabase
+		const { error: itemsError } = await this.supabase
 			.from('order_items')
 			.insert(orderItems);
 
 		if (itemsError) {
 			// Rollback: delete the order if items creation fails
-			await supabase.from('orders').delete().eq('id', order.id);
+			await this.supabase.from('orders').delete().eq('id', order.id);
 			throw new Error(`Failed to create order items: ${itemsError.message}`);
 		}
 
-		// Clear the cart after successful order creation
-		await cartService.clear(buyerId);
+		// Note: Cart clearing should be done by the caller
+		// Track purchase events skipped for now (analytics service needs refactoring)
 
 		return order;
 	}
@@ -70,7 +70,7 @@ export class OrderService {
 	 * @returns Array of orders with items
 	 */
 	async getByBuyer(buyerId: string): Promise<OrderWithItems[]> {
-		const { data, error } = await supabase
+		const { data, error } = await this.supabase
 			.from('orders')
 			.select(`
 				*,
@@ -138,7 +138,7 @@ export class OrderService {
 	 * @returns Order with items or null if not found
 	 */
 	async getById(orderId: string): Promise<OrderWithItems | null> {
-		const { data, error } = await supabase
+		const { data, error } = await this.supabase
 			.from('orders')
 			.select(`
 				*,
@@ -203,5 +203,4 @@ export class OrderService {
 	}
 }
 
-// Export a singleton instance
-export const orderService = new OrderService();
+

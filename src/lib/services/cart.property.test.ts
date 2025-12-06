@@ -1,97 +1,19 @@
-import { describe, test, expect, beforeAll, afterEach } from 'vitest';
+import { describe, test, expect, beforeAll, afterEach, afterAll } from 'vitest';
 import * as fc from 'fast-check';
 import { supabaseTest } from '$lib/test-utils/supabase-test';
 import { seedCategories } from '$lib/test-utils/seed-categories';
+import {
+	createTestBuyer,
+	createTestSeller,
+	createTestProduct,
+	cleanupBuyerData,
+	cleanupAllTestData
+} from '$lib/test-utils/test-data-helpers';
 
 /**
  * Property-based tests for CartService
  * These tests verify universal properties that should hold across all inputs
  */
-
-// Helper to create a test buyer profile
-async function ensureTestBuyer(name: string = 'Test Buyer'): Promise<string> {
-	const testEmail = `testbuyer-${Date.now()}-${Math.random()}@test.com`;
-	const testPassword = 'TestPassword123!';
-
-	// Create auth user using admin API (bypasses email confirmation)
-	const { data: authData, error: authError } = await supabaseTest.auth.admin.createUser({
-		email: testEmail,
-		password: testPassword,
-		email_confirm: true,
-		user_metadata: {
-			full_name: name
-		}
-	});
-
-	if (authError || !authData.user) {
-		throw new Error(`Failed to create test buyer: ${authError?.message}`);
-	}
-
-	// Update the profile to be a buyer
-	await supabaseTest
-		.from('profiles')
-		.update({ role: 'buyer', full_name: name })
-		.eq('id', authData.user.id);
-
-	return authData.user.id;
-}
-
-// Helper to create a test seller profile
-async function ensureTestSeller(): Promise<string> {
-	const testEmail = `testseller-${Date.now()}-${Math.random()}@test.com`;
-	const testPassword = 'TestPassword123!';
-
-	const { data: authData, error: authError } = await supabaseTest.auth.admin.createUser({
-		email: testEmail,
-		password: testPassword,
-		email_confirm: true,
-		user_metadata: {
-			full_name: 'Test Seller'
-		}
-	});
-
-	if (authError || !authData.user) {
-		throw new Error(`Failed to create test seller: ${authError?.message}`);
-	}
-
-	await supabaseTest
-		.from('profiles')
-		.update({ role: 'seller', full_name: 'Test Seller' })
-		.eq('id', authData.user.id);
-
-	return authData.user.id;
-}
-
-// Helper to create a test product
-async function createTestProduct(
-	sellerId: string,
-	name: string = 'Test Product',
-	price: number = 100
-): Promise<string> {
-	const { data, error } = await supabaseTest
-		.from('products')
-		.insert({
-			name,
-			short_description: 'Test product description',
-			long_description: 'Test product long description for testing purposes',
-			price,
-			seller_id: sellerId,
-			category: 'HR'
-		})
-		.select()
-		.single();
-
-	if (error || !data) {
-		throw new Error(`Failed to create test product: ${error?.message}`);
-	}
-
-	return data.id;
-}
-
-// Helper to clean up test cart items
-async function cleanupTestCartItems(buyerId: string) {
-	await supabaseTest.from('cart_items').delete().eq('buyer_id', buyerId);
-}
 
 describe('CartService Property-Based Tests', () => {
 	let testBuyerId: string;
@@ -100,33 +22,60 @@ describe('CartService Property-Based Tests', () => {
 
 	beforeAll(async () => {
 		await seedCategories();
-		testBuyerId = await ensureTestBuyer();
-		testSellerId = await ensureTestSeller();
-		testProductId = await createTestProduct(testSellerId, 'Test Product', 100);
+		testBuyerId = await createTestBuyer('Test Buyer for Cart');
+		testSellerId = await createTestSeller('Test Seller for Cart');
+		testProductId = await createTestProduct(testSellerId, { price_cents: 10000 }); // $100.00
 	});
 
 	afterEach(async () => {
-		await cleanupTestCartItems(testBuyerId);
-	});
+		await cleanupBuyerData(testBuyerId);
+	}, 30000); // 30 second timeout for cleanup
+
+	afterAll(async () => {
+		await cleanupAllTestData();
+	}, 30000); // 30 second timeout for cleanup
 
 	// Feature: startup-marketplace, Property 46: Cart data round-trip
 	// Validates: Requirements 21.3
 	test('Property 46: Cart data round-trip - storing then retrieving cart returns same items', async () => {
+		// Create a cart for the buyer first
+		const { data: cart } = await supabaseTest
+			.from('carts')
+			.insert({ buyer_id: testBuyerId, status: 'open' })
+			.select()
+			.single();
+
+		if (!cart) {
+			throw new Error('Failed to create test cart');
+		}
+
 		await fc.assert(
 			fc.asyncProperty(
 				fc.constant(testProductId),
 				fc.integer({ min: 1, max: 10 }),
 				async (productId, quantity) => {
 					// Clean up any existing cart items first
-					await supabaseTest.from('cart_items').delete().eq('buyer_id', testBuyerId);
+					await supabaseTest.from('cart_items').delete().eq('cart_id', cart.id);
+
+					// Get product price
+					const { data: product } = await supabaseTest
+						.from('products')
+						.select('price_cents')
+						.eq('id', productId)
+						.single();
+
+					if (!product) {
+						throw new Error('Failed to get product');
+					}
 
 					// Add the cart item using test client (bypasses RLS)
 					const { data: added, error: addError } = await supabaseTest
 						.from('cart_items')
 						.insert({
-							buyer_id: testBuyerId,
+							cart_id: cart.id,
 							product_id: productId,
-							quantity
+							quantity,
+							unit_price_cents: product.price_cents
 						})
 						.select()
 						.single();
@@ -136,11 +85,11 @@ describe('CartService Property-Based Tests', () => {
 					}
 
 					// Verify the cart item was created with correct data
-					expect(added.buyer_id).toBe(testBuyerId);
+					expect(added.cart_id).toBe(cart.id);
 					expect(added.product_id).toBe(productId);
 					expect(added.quantity).toBe(quantity);
 
-					// Retrieve cart items for the buyer using test client
+					// Retrieve cart items using test client
 					const { data: cartItems, error: getError } = await supabaseTest
 						.from('cart_items')
 						.select(
@@ -152,7 +101,7 @@ describe('CartService Property-Based Tests', () => {
 							)
 						`
 						)
-						.eq('buyer_id', testBuyerId);
+						.eq('cart_id', cart.id);
 
 					if (getError) {
 						throw new Error(`Failed to retrieve cart items: ${getError.message}`);
@@ -166,7 +115,7 @@ describe('CartService Property-Based Tests', () => {
 					if (!retrieved) return false;
 
 					const dataMatches =
-						retrieved.buyer_id === testBuyerId &&
+						retrieved.cart_id === cart.id &&
 						retrieved.product_id === productId &&
 						retrieved.quantity === quantity;
 
@@ -174,22 +123,36 @@ describe('CartService Property-Based Tests', () => {
 					const hasProductData = retrieved.product !== undefined;
 
 					// Clean up after test
-					await supabaseTest.from('cart_items').delete().eq('buyer_id', testBuyerId);
+					await supabaseTest.from('cart_items').delete().eq('cart_id', cart.id);
 
 					return dataMatches && hasProductData;
 				}
 			),
 			{ numRuns: 100 }
 		);
+
+		// Clean up the cart
+		await supabaseTest.from('carts').delete().eq('id', cart.id);
 	}, 60000);
 
 	// Feature: startup-marketplace, Property 10: Cart total accuracy
 	// Validates: Requirements 7.2
 	test('Property 10: Cart total accuracy - total equals sum of (price × quantity) for all items', async () => {
-		// Create multiple test products with different prices
-		const product1Id = await createTestProduct(testSellerId, 'Product 1', 50);
-		const product2Id = await createTestProduct(testSellerId, 'Product 2', 75);
-		const product3Id = await createTestProduct(testSellerId, 'Product 3', 100);
+		// Create multiple test products with different prices (in cents)
+		const product1Id = await createTestProduct(testSellerId, { price_cents: 5000 }); // $50.00
+		const product2Id = await createTestProduct(testSellerId, { price_cents: 7500 }); // $75.00
+		const product3Id = await createTestProduct(testSellerId, { price_cents: 10000 }); // $100.00
+
+		// Create a cart for the buyer
+		const { data: cart } = await supabaseTest
+			.from('carts')
+			.insert({ buyer_id: testBuyerId, status: 'open' })
+			.select()
+			.single();
+
+		if (!cart) {
+			throw new Error('Failed to create test cart');
+		}
 
 		await fc.assert(
 			fc.asyncProperty(
@@ -197,69 +160,73 @@ describe('CartService Property-Based Tests', () => {
 				fc.integer({ min: 1, max: 5 }),
 				fc.integer({ min: 1, max: 5 }),
 				async (qty1, qty2, qty3) => {
-					// Clean up cart first
-					await supabaseTest.from('cart_items').delete().eq('buyer_id', testBuyerId);
+					// Clean up cart items first
+					await supabaseTest.from('cart_items').delete().eq('cart_id', cart.id);
 
 					// Add items to cart
 					await supabaseTest.from('cart_items').insert([
-						{ buyer_id: testBuyerId, product_id: product1Id, quantity: qty1 },
-						{ buyer_id: testBuyerId, product_id: product2Id, quantity: qty2 },
-						{ buyer_id: testBuyerId, product_id: product3Id, quantity: qty3 }
+						{ cart_id: cart.id, product_id: product1Id, quantity: qty1, unit_price_cents: 5000 },
+						{ cart_id: cart.id, product_id: product2Id, quantity: qty2, unit_price_cents: 7500 },
+						{ cart_id: cart.id, product_id: product3Id, quantity: qty3, unit_price_cents: 10000 }
 					]);
 
-					// Calculate expected total
-					const expectedTotal = 50 * qty1 + 75 * qty2 + 100 * qty3;
+					// Calculate expected total (in cents)
+					const expectedTotal = 5000 * qty1 + 7500 * qty2 + 10000 * qty3;
 
-					// Get cart items with product details
+					// Get cart items
 					const { data: cartItems } = await supabaseTest
 						.from('cart_items')
-						.select(
-							`
-							*,
-							product:products (price)
-						`
-						)
-						.eq('buyer_id', testBuyerId);
+						.select('*')
+						.eq('cart_id', cart.id);
 
 					// Calculate actual total
 					const actualTotal = (cartItems || []).reduce((total, item: any) => {
-						return total + item.product.price * (item.quantity || 1);
+						return total + item.unit_price_cents * item.quantity;
 					}, 0);
 
-					// Verify totals match (with floating point tolerance)
-					return Math.abs(expectedTotal - actualTotal) < 0.01;
+					// Verify totals match
+					return expectedTotal === actualTotal;
 				}
 			),
 			{ numRuns: 100 }
 		);
 
-		// Cleanup the extra products
-		await supabaseTest.from('products').delete().eq('id', product1Id);
-		await supabaseTest.from('products').delete().eq('id', product2Id);
-		await supabaseTest.from('products').delete().eq('id', product3Id);
+		// Clean up the cart
+		await supabaseTest.from('carts').delete().eq('id', cart.id);
 	}, 60000);
 
 	// Feature: startup-marketplace, Property 11: Cart removal updates total
 	// Validates: Requirements 7.3
 	test('Property 11: Cart removal updates total - new total equals old total minus removed item cost', async () => {
-		// Create test products with known prices
-		const product1Id = await createTestProduct(testSellerId, 'Product 1', 50);
-		const product2Id = await createTestProduct(testSellerId, 'Product 2', 75);
+		// Create test products with known prices (in cents)
+		const product1Id = await createTestProduct(testSellerId, { price_cents: 5000 }); // $50.00
+		const product2Id = await createTestProduct(testSellerId, { price_cents: 7500 }); // $75.00
+
+		// Create a cart for the buyer
+		const { data: cart } = await supabaseTest
+			.from('carts')
+			.insert({ buyer_id: testBuyerId, status: 'open' })
+			.select()
+			.single();
+
+		if (!cart) {
+			throw new Error('Failed to create test cart');
+		}
 
 		await fc.assert(
 			fc.asyncProperty(
 				fc.integer({ min: 1, max: 5 }),
 				fc.integer({ min: 1, max: 5 }),
 				async (qty1, qty2) => {
-					// Clean up cart first
-					await supabaseTest.from('cart_items').delete().eq('buyer_id', testBuyerId);
+					// Clean up cart items first
+					await supabaseTest.from('cart_items').delete().eq('cart_id', cart.id);
 
 					// Add items to cart
 					const { data: items } = await supabaseTest
 						.from('cart_items')
 						.insert([
-							{ buyer_id: testBuyerId, product_id: product1Id, quantity: qty1 },
-							{ buyer_id: testBuyerId, product_id: product2Id, quantity: qty2 }
+							{ cart_id: cart.id, product_id: product1Id, quantity: qty1, unit_price_cents: 5000 },
+							{ cart_id: cart.id, product_id: product2Id, quantity: qty2, unit_price_cents: 7500 }
 						])
 						.select();
 
@@ -267,62 +234,51 @@ describe('CartService Property-Based Tests', () => {
 						throw new Error('Failed to add cart items');
 					}
 
-					// Calculate initial total
-					const initialTotal = 50 * qty1 + 75 * qty2;
+					// Calculate initial total (in cents)
+					const initialTotal = 5000 * qty1 + 7500 * qty2;
 
-					// Get cart items with product details
+					// Get cart items
 					const { data: initialCartItems } = await supabaseTest
 						.from('cart_items')
-						.select(
-							`
-							*,
-							product:products (price)
-						`
-						)
-						.eq('buyer_id', testBuyerId);
+						.select('*')
+						.eq('cart_id', cart.id);
 
 					const calculatedInitialTotal = (initialCartItems || []).reduce((total, item: any) => {
-						return total + item.product.price * (item.quantity || 1);
+						return total + item.unit_price_cents * item.quantity;
 					}, 0);
 
 					// Verify initial total
-					if (Math.abs(initialTotal - calculatedInitialTotal) >= 0.01) {
+					if (initialTotal !== calculatedInitialTotal) {
 						return false;
 					}
 
 					// Remove the first item
 					const itemToRemove = items[0];
-					const removedItemCost = 50 * qty1;
+					const removedItemCost = 5000 * qty1;
 
 					await supabaseTest.from('cart_items').delete().eq('id', itemToRemove.id);
 
 					// Calculate new total
 					const { data: finalCartItems } = await supabaseTest
 						.from('cart_items')
-						.select(
-							`
-							*,
-							product:products (price)
-						`
-						)
-						.eq('buyer_id', testBuyerId);
+						.select('*')
+						.eq('cart_id', cart.id);
 
 					const actualNewTotal = (finalCartItems || []).reduce((total, item: any) => {
-						return total + item.product.price * (item.quantity || 1);
+						return total + item.unit_price_cents * item.quantity;
 					}, 0);
 
 					const expectedNewTotal = initialTotal - removedItemCost;
 
 					// Verify new total equals old total minus removed item cost
-					return Math.abs(expectedNewTotal - actualNewTotal) < 0.01;
+					return expectedNewTotal === actualNewTotal;
 				}
 			),
 			{ numRuns: 100 }
 		);
 
-		// Cleanup the extra products
-		await supabaseTest.from('products').delete().eq('id', product1Id);
-		await supabaseTest.from('products').delete().eq('id', product2Id);
+		// Clean up the cart
+		await supabaseTest.from('carts').delete().eq('id', cart.id);
 	}, 60000);
 
 	// Feature: startup-marketplace, Property 8: List modification invariant
@@ -330,10 +286,21 @@ describe('CartService Property-Based Tests', () => {
 	test('Property 8: List modification invariant (cart) - adding increases list size by 1, removing decreases by 1', async () => {
 		// Create multiple test products for this test
 		const productIds = await Promise.all([
-			createTestProduct(testSellerId, 'Product 1', 50),
-			createTestProduct(testSellerId, 'Product 2', 75),
-			createTestProduct(testSellerId, 'Product 3', 100)
+			createTestProduct(testSellerId, { name: 'Product 1', price_cents: 5000 }),
+			createTestProduct(testSellerId, { name: 'Product 2', price_cents: 7500 }),
+			createTestProduct(testSellerId, { name: 'Product 3', price_cents: 10000 })
 		]);
+
+		// Create a cart for the buyer
+		const { data: cart } = await supabaseTest
+			.from('carts')
+			.insert({ buyer_id: testBuyerId, status: 'open' })
+			.select()
+			.single();
+
+		if (!cart) {
+			throw new Error('Failed to create test cart');
+		}
 
 		await fc.assert(
 			fc.asyncProperty(
@@ -344,17 +311,29 @@ describe('CartService Property-Based Tests', () => {
 					const { data: initialCartItems } = await supabaseTest
 						.from('cart_items')
 						.select('*')
-						.eq('buyer_id', testBuyerId);
+						.eq('cart_id', cart.id);
 
 					const initialCount = initialCartItems?.length || 0;
+
+					// Get product price
+					const { data: product } = await supabaseTest
+						.from('products')
+						.select('price_cents')
+						.eq('id', productId)
+						.single();
+
+					if (!product) {
+						throw new Error('Failed to get product');
+					}
 
 					// Add a cart item using test client
 					const { data: addedItem } = await supabaseTest
 						.from('cart_items')
 						.insert({
-							buyer_id: testBuyerId,
+							cart_id: cart.id,
 							product_id: productId,
-							quantity
+							quantity,
+							unit_price_cents: product.price_cents
 						})
 						.select()
 						.single();
@@ -366,7 +345,7 @@ describe('CartService Property-Based Tests', () => {
 					const { data: afterAddCartItems } = await supabaseTest
 						.from('cart_items')
 						.select('*')
-						.eq('buyer_id', testBuyerId);
+						.eq('cart_id', cart.id);
 
 					const afterAddCount = afterAddCartItems?.length || 0;
 
@@ -379,7 +358,7 @@ describe('CartService Property-Based Tests', () => {
 					const { data: afterRemoveCartItems } = await supabaseTest
 						.from('cart_items')
 						.select('*')
-						.eq('buyer_id', testBuyerId);
+						.eq('cart_id', cart.id);
 
 					const afterRemoveCount = afterRemoveCartItems?.length || 0;
 
@@ -395,9 +374,7 @@ describe('CartService Property-Based Tests', () => {
 			{ numRuns: 100 }
 		);
 
-		// Cleanup the extra products
-		for (const productId of productIds) {
-			await supabaseTest.from('products').delete().eq('id', productId);
-		}
+		// Clean up the cart
+		await supabaseTest.from('carts').delete().eq('id', cart.id);
 	}, 60000);
 });

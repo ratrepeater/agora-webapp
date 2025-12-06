@@ -1,8 +1,16 @@
-import { describe, test, expect, beforeAll, afterEach } from 'vitest';
+import { describe, test, expect, beforeAll, afterEach, afterAll } from 'vitest';
 import * as fc from 'fast-check';
 import { productService } from './products';
 import { supabaseTest } from '$lib/test-utils/supabase-test';
 import { seedCategories } from '$lib/test-utils/seed-categories';
+import {
+	createTestSeller,
+	createTestProduct,
+	getCategoryId,
+	cleanupSellerData,
+	cleanupAllTestData
+} from '$lib/test-utils/test-data-helpers';
+import { productInsertArb, productCategoryKeyArb } from '$lib/test-utils/generators';
 import type { TablesInsert } from '$lib/helpers/database.types';
 
 /**
@@ -10,137 +18,29 @@ import type { TablesInsert } from '$lib/helpers/database.types';
  * These tests verify universal properties that should hold across all inputs
  */
 
-// Test data generators
-const productCategoryGenerator = () => fc.constantFrom('hr', 'legal', 'marketing', 'devtools');
-
-const productGenerator = (sellerId: string): fc.Arbitrary<TablesInsert<'products'>> => {
-	return fc.record({
-		name: fc.string({ minLength: 1, maxLength: 100 }),
-		short_description: fc.string({ minLength: 10, maxLength: 200 }),
-		long_description: fc.oneof(
-			fc.string({ minLength: 50, maxLength: 2000 }),
-			fc.constant(null)
-		),
-		price_cents: fc.integer({ min: 1, max: 1000000 }),
-		seller_id: fc.constant(sellerId), // Use the actual test seller ID
-		category_id: fc.constant(null), // Will be set based on category
-		logo_url: fc.oneof(
-			fc.webUrl(),
-			fc.constant(null)
-		),
-		demo_visual_url: fc.oneof(
-			fc.webUrl(),
-			fc.constant(null)
-		),
-		is_featured: fc.boolean(),
-		is_bundle: fc.constant(false),
-		status: fc.constant('published'), // Always use published for round-trip tests
-		bundle_pricing_mode: fc.constant('fixed')
-	});
-};
-
-// Helper to create a test seller profile via Supabase Auth
-async function ensureTestSeller() {
-	const testEmail = 'testseller@test.com';
-	const testPassword = 'TestPassword123!';
-	
-	// Check if test seller profile exists
-	const { data: profiles } = await supabaseTest
-		.from('profiles')
-		.select('id')
-		.eq('full_name', 'Test Seller')
-		.limit(1);
-	
-	if (profiles && profiles.length > 0) {
-		// Seller already exists, return the ID
-		return profiles[0].id;
-	}
-	
-	// Create auth user using admin API (bypasses email confirmation)
-	const { data: authData, error: authError } = await supabaseTest.auth.admin.createUser({
-		email: testEmail,
-		password: testPassword,
-		email_confirm: true, // Auto-confirm email
-		user_metadata: {
-			full_name: 'Test Seller'
-		}
-	});
-	
-	if (authError) {
-		// User might already exist, try to get their ID from auth.users
-		const { data: existingUser, error: getUserError } = await supabaseTest.auth.admin.listUsers();
-		
-		if (existingUser && existingUser.users) {
-			const testUser = existingUser.users.find(u => u.email === testEmail);
-			if (testUser) {
-				// Update the profile to be a seller
-				await supabaseTest
-					.from('profiles')
-					.update({ role_seller: true, role_buyer: false, full_name: 'Test Seller' })
-					.eq('id', testUser.id);
-				
-				return testUser.id;
-			}
-		}
-		
-		throw new Error(`Failed to create test seller: ${authError.message}`);
-	}
-	
-	if (!authData.user) {
-		throw new Error('Failed to create test user - no user returned');
-	}
-	
-	// Update the profile to be a seller
-	await supabaseTest
-		.from('profiles')
-		.update({ role_seller: true, role_buyer: false })
-		.eq('id', authData.user.id);
-	
-	return authData.user.id;
-}
-
-// Helper to get a category ID
-async function getCategoryId(categoryKey: string): Promise<string> {
-	const { data, error } = await supabaseTest
-		.from('categories')
-		.select('id')
-		.eq('key', categoryKey)
-		.single();
-	
-	if (error || !data) {
-		throw new Error(`Failed to get category ID for ${categoryKey}`);
-	}
-	
-	return data.id;
-}
-
-// Helper to clean up test products
-async function cleanupTestProducts(sellerId: string) {
-	await supabaseTest
-		.from('products')
-		.delete()
-		.eq('seller_id', sellerId);
-}
-
 describe('ProductService Property-Based Tests', () => {
 	let testSellerId: string;
 
 	beforeAll(async () => {
 		await seedCategories();
-		testSellerId = await ensureTestSeller();
+		testSellerId = await createTestSeller('Test Seller for Products');
 	});
 
 	afterEach(async () => {
-		await cleanupTestProducts(testSellerId);
-	});
+		await cleanupSellerData(testSellerId);
+	}, 30000); // 30 second timeout for cleanup
+
+	afterAll(async () => {
+		await cleanupAllTestData();
+	}, 30000); // 30 second timeout for cleanup
 
 	// Feature: startup-marketplace, Property 44: Product data round-trip
 	// Validates: Requirements 21.1
 	test('Property 44: Product data round-trip - storing then retrieving product returns equivalent data', async () => {
 		await fc.assert(
 			fc.asyncProperty(
-				productGenerator(testSellerId),
-				productCategoryGenerator(),
+				productInsertArb(testSellerId),
+				productCategoryKeyArb(),
 				async (productData, category) => {
 					// Get category ID and set it on the product
 					const categoryId = await getCategoryId(category);
@@ -203,11 +103,10 @@ describe('ProductService Property-Based Tests', () => {
 		for (const category of categories) {
 			const categoryId = await getCategoryId(category);
 			for (let i = 0; i < productsPerCategory; i++) {
-				await supabaseTest.from('products').insert({
+				await createTestProduct(testSellerId, {
 					name: `Test Product ${category} ${i}`,
 					short_description: `Test description for ${category}`,
 					price_cents: 1000,
-					seller_id: testSellerId,
 					category_id: categoryId,
 					status: 'published'
 				});
@@ -217,7 +116,7 @@ describe('ProductService Property-Based Tests', () => {
 		// Test that filtering by each category returns only products from that category
 		await fc.assert(
 			fc.asyncProperty(
-				productCategoryGenerator(),
+				productCategoryKeyArb(),
 				async (category) => {
 					const products = await productService.getByCategory(category as any);
 					const categoryId = await getCategoryId(category);
@@ -242,12 +141,11 @@ describe('ProductService Property-Based Tests', () => {
 
 		const categoryId = await getCategoryId('hr');
 		for (const product of testProducts) {
-			await supabaseTest.from('products').insert({
+			await createTestProduct(testSellerId, {
 				name: product.name,
 				short_description: product.short_description,
 				long_description: `Extended description with keywords: ${product.keywords.join(', ')}`,
 				price_cents: 1000,
-				seller_id: testSellerId,
 				category_id: categoryId,
 				status: 'published'
 			});
@@ -284,12 +182,38 @@ describe('ProductService Property-Based Tests', () => {
 		const hrCategoryId = await getCategoryId('hr');
 		const legalCategoryId = await getCategoryId('legal');
 		
-		await supabaseTest.from('products').insert([
-			{ name: 'HR Tool A', short_description: 'HR management', price_cents: 5000, seller_id: testSellerId, category_id: hrCategoryId, status: 'published', is_featured: true },
-			{ name: 'HR Tool B', short_description: 'HR analytics', price_cents: 15000, seller_id: testSellerId, category_id: hrCategoryId, status: 'published', is_featured: false },
-			{ name: 'Legal Tool A', short_description: 'Legal management', price_cents: 8000, seller_id: testSellerId, category_id: legalCategoryId, status: 'published', is_featured: true },
-			{ name: 'Legal Tool B', short_description: 'Legal analytics', price_cents: 12000, seller_id: testSellerId, category_id: legalCategoryId, status: 'published', is_featured: false }
-		]);
+		await createTestProduct(testSellerId, {
+			name: 'HR Tool A',
+			short_description: 'HR management',
+			price_cents: 5000,
+			category_id: hrCategoryId,
+			status: 'published',
+			is_featured: true
+		});
+		await createTestProduct(testSellerId, {
+			name: 'HR Tool B',
+			short_description: 'HR analytics',
+			price_cents: 15000,
+			category_id: hrCategoryId,
+			status: 'published',
+			is_featured: false
+		});
+		await createTestProduct(testSellerId, {
+			name: 'Legal Tool A',
+			short_description: 'Legal management',
+			price_cents: 8000,
+			category_id: legalCategoryId,
+			status: 'published',
+			is_featured: true
+		});
+		await createTestProduct(testSellerId, {
+			name: 'Legal Tool B',
+			short_description: 'Legal analytics',
+			price_cents: 12000,
+			category_id: legalCategoryId,
+			status: 'published',
+			is_featured: false
+		});
 
 		// Test combined search + category filter
 		const results = await productService.search('management', { category: 'hr' as any });

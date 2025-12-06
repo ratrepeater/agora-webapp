@@ -1,13 +1,13 @@
 <script lang="ts">
-	import type { ProductWithScores } from '$lib/helpers/types';
+	import type { ProductWithScores, ProductWithRating } from '$lib/helpers/types';
 	import ProductCard from './ProductCard.svelte';
 
 	interface Props {
 		title: string;
-		products: ProductWithScores[];
+		products: (ProductWithScores | ProductWithRating)[];
 		category?: string;
 		showMoreLink?: string;
-		onproductclick?: (product: ProductWithScores) => void;
+		onproductclick?: (product: ProductWithScores | ProductWithRating) => void;
 		onshowmore?: () => void;
 	}
 
@@ -21,6 +21,16 @@
 	}: Props = $props();
 
 	let scrollContainer: HTMLDivElement;
+	let canScrollLeft = $state(false);
+	let canScrollRight = $state(false);
+
+	function updateScrollButtons() {
+		if (scrollContainer) {
+			canScrollLeft = scrollContainer.scrollLeft > 0;
+			canScrollRight = 
+				scrollContainer.scrollLeft < scrollContainer.scrollWidth - scrollContainer.clientWidth - 1;
+		}
+	}
 
 	function scrollLeft() {
 		if (scrollContainer) {
@@ -34,7 +44,23 @@
 		}
 	}
 
-	function handleProductClick(product: ProductWithScores) {
+	// Update scroll buttons when container is mounted or products change
+	$effect(() => {
+		if (scrollContainer && products.length > 0) {
+			updateScrollButtons();
+			// Add scroll event listener
+			scrollContainer.addEventListener('scroll', updateScrollButtons);
+			// Also update on resize
+			window.addEventListener('resize', updateScrollButtons);
+			
+			return () => {
+				scrollContainer?.removeEventListener('scroll', updateScrollButtons);
+				window.removeEventListener('resize', updateScrollButtons);
+			};
+		}
+	});
+
+	function handleProductClick(product: ProductWithScores | ProductWithRating) {
 		onproductclick?.(product);
 	}
 
@@ -66,21 +92,23 @@
 	<!-- Scrollable Product Container -->
 	<div class="relative group">
 		<!-- Left Scroll Button -->
-		<button
-			class="btn btn-circle btn-sm absolute left-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-			onclick={scrollLeft}
-			aria-label="Scroll left"
-		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="h-5 w-5"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
+		{#if canScrollLeft}
+			<button
+				class="btn btn-circle btn-sm absolute left-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+				onclick={scrollLeft}
+				aria-label="Scroll left"
 			>
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-			</svg>
-		</button>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-5 w-5"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+				</svg>
+			</button>
+		{/if}
 
 		<!-- Product Cards Container -->
 		<div
@@ -100,21 +128,23 @@
 		</div>
 
 		<!-- Right Scroll Button -->
-		<button
-			class="btn btn-circle btn-sm absolute right-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-			onclick={scrollRight}
-			aria-label="Scroll right"
-		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="h-5 w-5"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
+		{#if canScrollRight}
+			<button
+				class="btn btn-circle btn-sm absolute right-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+				onclick={scrollRight}
+				aria-label="Scroll right"
 			>
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-			</svg>
-		</button>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-5 w-5"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+				</svg>
+			</button>
+		{/if}
 	</div>
 </div>
 

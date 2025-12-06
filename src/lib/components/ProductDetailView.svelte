@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type {
 		ProductWithScores,
+		ProductWithRating,
 		ScoreBreakdown,
 		ProductFeature,
 		ReviewWithBuyer
@@ -8,12 +9,14 @@
 	import ProductCard from './ProductCard.svelte';
 
 	interface Props {
-		product: ProductWithScores;
+		product: ProductWithScores | ProductWithRating;
 		scoreBreakdown?: ScoreBreakdown;
 		features?: ProductFeature[];
 		reviews?: ReviewWithBuyer[];
 		similarProducts?: ProductWithScores[];
+		averageRating?: number;
 		isBookmarked?: boolean;
+		isCompared?: boolean;
 		isInCart?: boolean;
 		oncompare?: () => void;
 		onbookmark?: () => void;
@@ -26,18 +29,22 @@
 		features = [],
 		reviews = [],
 		similarProducts = [],
+		averageRating: propAverageRating,
 		isBookmarked = false,
+		isCompared = false,
 		isInCart = false,
 		oncompare,
 		onbookmark,
 		onaddtocart
 	}: Props = $props();
 
-	// Calculate average rating from reviews
+	// Calculate average rating from reviews or use provided value
 	const averageRating = $derived(
-		reviews.length > 0
-			? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-			: product.average_rating || 0
+		propAverageRating !== undefined
+			? propAverageRating
+			: reviews.length > 0
+				? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+				: product.average_rating || 0
 	);
 
 	// Sort features by relevance score
@@ -78,15 +85,17 @@
 				<!-- Price and Overall Score -->
 				<div class="flex items-center gap-6 mb-6">
 					<div>
-						<span class="text-4xl font-bold text-primary">${product.price.toFixed(2)}</span>
+						<span class="text-4xl font-bold text-primary">${((product.price_cents || 0) / 100).toFixed(2)}</span>
 						<span class="text-lg text-base-content/60">/month</span>
 					</div>
 					<div class="divider divider-horizontal"></div>
-					<div class="stat bg-base-300 rounded-lg p-4">
-						<div class="stat-title">Overall Score</div>
-						<div class="stat-value text-3xl">{product.overall_score || 0}</div>
-						<div class="stat-desc">out of 100</div>
-					</div>
+					{#if 'overall_score' in product}
+						<div class="stat bg-base-300 rounded-lg p-4">
+							<div class="stat-title">Overall Score</div>
+							<div class="stat-value text-3xl">{product.overall_score || 0}</div>
+							<div class="stat-desc">out of 100</div>
+						</div>
+					{/if}
 				</div>
 
 				<!-- Action Buttons -->
@@ -108,7 +117,9 @@
 						</svg>
 						{isInCart ? 'In Cart' : 'Add to Cart'}
 					</button>
-					<button class="btn btn-outline btn-lg" onclick={oncompare}>
+					<button class="btn btn-lg {isCompared
+						? 'btn-primary bg-blue-600 border-blue-600 hover:bg-blue-700'
+						: 'btn-outline'}" onclick={oncompare}>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							class="h-6 w-6"
@@ -123,7 +134,7 @@
 								d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
 							/>
 						</svg>
-						Compare
+						{isCompared ? 'Compared' : 'Compare'}
 					</button>
 					<button
 						class="btn {isBookmarked ? 'btn-primary' : 'btn-outline'} btn-lg"
@@ -211,66 +222,68 @@
 	</div>
 
 	<!-- Score Breakdown -->
-	<div class="card bg-base-100 shadow-xl mb-8">
-		<div class="card-body">
-			<h2 class="card-title text-2xl mb-4">Score Breakdown</h2>
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-				<div>
-					<div class="flex justify-between items-center mb-2">
-						<span class="font-semibold">Fit Score</span>
-						<span class="text-2xl font-bold">{product.fit_score || 0}</span>
+	{#if 'fit_score' in product}
+		<div class="card bg-base-100 shadow-xl mb-8">
+			<div class="card-body">
+				<h2 class="card-title text-2xl mb-4">Score Breakdown</h2>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div>
+						<div class="flex justify-between items-center mb-2">
+							<span class="font-semibold">Fit Score</span>
+							<span class="text-2xl font-bold">{product.fit_score || 0}</span>
+						</div>
+						<progress
+							class="progress progress-primary w-full"
+							value={product.fit_score || 0}
+							max="100"
+						></progress>
+						<p class="text-sm text-base-content/70 mt-2">
+							How well the product fits into your workflow
+						</p>
 					</div>
-					<progress
-						class="progress progress-primary w-full"
-						value={product.fit_score || 0}
-						max="100"
-					></progress>
-					<p class="text-sm text-base-content/70 mt-2">
-						How well the product fits into your workflow
-					</p>
-				</div>
 
-				<div>
-					<div class="flex justify-between items-center mb-2">
-						<span class="font-semibold">Feature Score</span>
-						<span class="text-2xl font-bold">{product.feature_score || 0}</span>
+					<div>
+						<div class="flex justify-between items-center mb-2">
+							<span class="font-semibold">Feature Score</span>
+							<span class="text-2xl font-bold">{product.feature_score || 0}</span>
+						</div>
+						<progress
+							class="progress progress-secondary w-full"
+							value={product.feature_score || 0}
+							max="100"
+						></progress>
+						<p class="text-sm text-base-content/70 mt-2">Product completeness and capabilities</p>
 					</div>
-					<progress
-						class="progress progress-secondary w-full"
-						value={product.feature_score || 0}
-						max="100"
-					></progress>
-					<p class="text-sm text-base-content/70 mt-2">Product completeness and capabilities</p>
-				</div>
 
-				<div>
-					<div class="flex justify-between items-center mb-2">
-						<span class="font-semibold">Integration Score</span>
-						<span class="text-2xl font-bold">{product.integration_score || 0}</span>
+					<div>
+						<div class="flex justify-between items-center mb-2">
+							<span class="font-semibold">Integration Score</span>
+							<span class="text-2xl font-bold">{product.integration_score || 0}</span>
+						</div>
+						<progress
+							class="progress progress-accent w-full"
+							value={product.integration_score || 0}
+							max="100"
+						></progress>
+						<p class="text-sm text-base-content/70 mt-2">Ease of integration with your stack</p>
 					</div>
-					<progress
-						class="progress progress-accent w-full"
-						value={product.integration_score || 0}
-						max="100"
-					></progress>
-					<p class="text-sm text-base-content/70 mt-2">Ease of integration with your stack</p>
-				</div>
 
-				<div>
-					<div class="flex justify-between items-center mb-2">
-						<span class="font-semibold">Review Score</span>
-						<span class="text-2xl font-bold">{product.review_score || 0}</span>
+					<div>
+						<div class="flex justify-between items-center mb-2">
+							<span class="font-semibold">Review Score</span>
+							<span class="text-2xl font-bold">{product.review_score || 0}</span>
+						</div>
+						<progress
+							class="progress progress-info w-full"
+							value={product.review_score || 0}
+							max="100"
+						></progress>
+						<p class="text-sm text-base-content/70 mt-2">Customer satisfaction rating</p>
 					</div>
-					<progress
-						class="progress progress-info w-full"
-						value={product.review_score || 0}
-						max="100"
-					></progress>
-					<p class="text-sm text-base-content/70 mt-2">Customer satisfaction rating</p>
 				</div>
 			</div>
 		</div>
-	</div>
+	{/if}
 
 	<!-- Features List -->
 	{#if sortedFeatures.length > 0}
@@ -314,7 +327,7 @@
 						{/each}
 					</div>
 					<span class="text-lg font-semibold">{averageRating.toFixed(1)}</span>
-					<span class="text-base-content/60">({reviews.length} reviews)</span>
+					<span class="text-base-content/60">({product.review_count || reviews.length} reviews)</span>
 				</div>
 			</div>
 
@@ -335,8 +348,11 @@
 									{/each}
 								</div>
 							</div>
-							{#if review.review_text}
-								<p class="text-base-content/80">{review.review_text}</p>
+							{#if review.title}
+								<h4 class="font-semibold text-base mb-1">{review.title}</h4>
+							{/if}
+							{#if review.body}
+								<p class="text-base-content/80">{review.body}</p>
 							{/if}
 						</div>
 					{/each}

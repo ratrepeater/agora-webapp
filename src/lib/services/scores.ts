@@ -13,7 +13,7 @@ import type {
 	BuyerOnboarding,
 	ScoreBreakdown
 } from '$lib/helpers/types';
-import { supabase } from '$lib/helpers/supabase';
+import { supabase } from '$lib/helpers/supabase.server';
 
 /**
  * Calculate fit score based on implementation complexity and deployment model

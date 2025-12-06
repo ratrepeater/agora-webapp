@@ -1,5 +1,5 @@
 // Example: Using Supabase with TypeScript types
-import { supabase } from '$lib/helpers/supabase';
+import { supabase } from '$lib/helpers/supabase.server';
 import type { Database } from '$lib/helpers/database.types';
 import type { Product } from '$lib/helpers/types';
 

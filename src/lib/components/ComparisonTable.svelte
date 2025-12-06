@@ -1,27 +1,42 @@
 <script lang="ts">
-	import type { ProductWithScores } from '$lib/helpers/types';
+	import type { ProductWithScores, ProductWithRating } from '$lib/helpers/types';
 
 	interface Props {
-		products: ProductWithScores[];
+		products: (ProductWithScores | ProductWithRating)[];
+		comparisonMetrics?: string[];
 		onremove?: (productId: string) => void;
 		onaddtocart?: (productId: string) => void;
 		onviewdetails?: (productId: string) => void;
+		onaddproduct?: () => void;
 	}
 
-	let { products = [], onremove, onaddtocart, onviewdetails }: Props = $props();
+	let { products = [], comparisonMetrics = [], onremove, onaddtocart, onviewdetails, onaddproduct }: Props = $props();
+	
+	let canAddMore = $derived(products.length < 3);
+	let emptySlots = $derived(Math.max(0, 3 - products.length));
+
+	// Helper to check if product has scores
+	function hasScores(p: ProductWithScores | ProductWithRating): p is ProductWithScores {
+		return 'overall_score' in p;
+	}
 
 	// Helper function to get the highest value in a metric across products
-	function getHighestValue(metric: keyof ProductWithScores): number {
-		return Math.max(...products.map((p) => (p[metric] as number) || 0));
+	function getHighestValue(metric: string): number {
+		return Math.max(...products.map((p) => {
+			if (hasScores(p) && metric in p) {
+				return (p[metric as keyof ProductWithScores] as number) || 0;
+			}
+			return 0;
+		}));
 	}
 
 	// Helper function to get the lowest price
 	function getLowestPrice(): number {
-		return Math.min(...products.map((p) => p.price));
+		return Math.min(...products.map((p) => p.price_cents || 0));
 	}
 
 	// Helper function to check if a value is the best (highest for scores, lowest for price)
-	function isBestScore(value: number, metric: keyof ProductWithScores): boolean {
+	function isBestScore(value: number, metric: string): boolean {
 		return value === getHighestValue(metric);
 	}
 
@@ -45,38 +60,36 @@
 	}
 </script>
 
-{#if products.length < 2}
-	<!-- Empty state for fewer than 2 products -->
-	<div class="flex flex-col items-center justify-center py-16 px-4 text-center">
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			class="h-24 w-24 text-base-content/30 mb-4"
-			fill="none"
-			viewBox="0 0 24 24"
-			stroke="currentColor"
-		>
-			<path
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				stroke-width="2"
-				d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-			/>
-		</svg>
-		<h3 class="text-2xl font-bold mb-2">Add Products to Compare</h3>
-		<p class="text-base-content/70 max-w-md">
-			You need at least 2 products to make a meaningful comparison. Browse the marketplace and add
-			products using the "Compare" button.
-		</p>
-	</div>
-{:else}
-	<!-- Comparison table -->
-	<div class="overflow-x-auto">
-		<table class="table table-zebra w-full">
+<!-- Comparison table -->
+<div class="overflow-x-auto">
+		<table class="table w-full" style="table-layout: fixed;">
 			<thead>
 				<tr>
-					<th class="sticky left-0 bg-base-200 z-10">Feature</th>
+					<th class="sticky left-0 bg-base-200 z-10 whitespace-nowrap" style="width: 200px;">Feature</th>
 					{#each products as product}
-						<th class="text-center min-w-[280px]">
+						<th class="text-center relative">
+							<!-- Remove button (top-right corner) -->
+							<button
+								class="btn btn-sm btn-circle btn-error absolute top-2 right-2 z-20"
+								onclick={(e) => handleRemove(product.id, e)}
+								aria-label="Remove {product.name} from comparison"
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-4 w-4"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M6 18L18 6M6 6l12 12"
+									/>
+								</svg>
+							</button>
+
 							<div class="flex flex-col items-center gap-2 p-2">
 								<!-- Product header -->
 								<div class="flex items-center gap-2">
@@ -112,22 +125,13 @@
 								{/if}
 
 								<!-- Action buttons -->
-								<div class="flex gap-2 w-full">
-									<button
-										class="btn btn-sm btn-error btn-outline flex-1"
-										onclick={(e) => handleRemove(product.id, e)}
-										aria-label="Remove {product.name} from comparison"
-									>
-										Remove
-									</button>
-									<button
-										class="btn btn-sm btn-primary flex-1"
-										onclick={(e) => handleAddToCart(product.id, e)}
-										aria-label="Add {product.name} to cart"
-									>
-										Add to Cart
-									</button>
-								</div>
+								<button
+									class="btn btn-sm btn-primary w-full"
+									onclick={(e) => handleAddToCart(product.id, e)}
+									aria-label="Add {product.name} to cart"
+								>
+									Add to Cart
+								</button>
 								<button
 									class="btn btn-sm btn-ghost w-full"
 									onclick={(e) => handleViewDetails(product.id, e)}
@@ -135,6 +139,50 @@
 								>
 									View Details
 								</button>
+							</div>
+						</th>
+					{/each}
+					{#each Array(emptySlots) as _, i}
+						<th class="text-center bg-base-200 p-0">
+							<div class="flex flex-col items-center justify-center gap-4 p-8 h-full">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-16 w-16 text-base-content/30"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M12 4v16m8-8H4"
+									/>
+								</svg>
+								<button
+									class="btn btn-lg btn-primary"
+									onclick={onaddproduct}
+									aria-label="Add another product to compare"
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										class="h-6 w-6"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M12 4v16m8-8H4"
+										/>
+									</svg>
+									Add Product
+								</button>
+								<p class="text-sm text-base-content/60 text-center">
+									Compare up to 3 products
+								</p>
 							</div>
 						</th>
 					{/each}
@@ -147,17 +195,20 @@
 					{#each products as product}
 						<td class="text-center">
 							<span
-								class="text-xl font-bold {isBestPrice(product.price)
+								class="text-xl font-bold {isBestPrice(product.price_cents || 0)
 									? 'text-success'
 									: 'text-base-content'}"
 							>
-								${product.price.toFixed(2)}
+								${((product.price_cents || 0) / 100).toFixed(2)}
 							</span>
 							<span class="text-sm text-base-content/60">/month</span>
-							{#if isBestPrice(product.price)}
+							{#if isBestPrice(product.price_cents || 0)}
 								<div class="badge badge-success badge-sm mt-1">Best Price</div>
 							{/if}
 						</td>
+					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
 					{/each}
 				</tr>
 
@@ -178,6 +229,9 @@
 							{/if}
 						</td>
 					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
+					{/each}
 				</tr>
 
 				<!-- Fit Score -->
@@ -196,6 +250,9 @@
 								<div class="badge badge-success badge-sm mt-1">Highest</div>
 							{/if}
 						</td>
+					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
 					{/each}
 				</tr>
 
@@ -216,6 +273,9 @@
 							{/if}
 						</td>
 					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
+					{/each}
 				</tr>
 
 				<!-- Integration Score -->
@@ -235,6 +295,9 @@
 							{/if}
 						</td>
 					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
+					{/each}
 				</tr>
 
 				<!-- Review Score -->
@@ -253,6 +316,9 @@
 								<div class="badge badge-success badge-sm mt-1">Highest</div>
 							{/if}
 						</td>
+					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
 					{/each}
 				</tr>
 
@@ -278,6 +344,9 @@
 							</div>
 						</td>
 					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
+					{/each}
 				</tr>
 
 				<!-- Review Count -->
@@ -288,11 +357,15 @@
 							<span class="text-base">{product.review_count || 0} reviews</span>
 						</td>
 					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
+					{/each}
 				</tr>
 
 				<!-- Extended Metrics Section Header -->
 				<tr class="bg-base-300">
-					<td colspan={products.length + 1} class="font-bold text-center py-3">
+					<td class="sticky left-0 bg-base-300"></td>
+					<td colspan={products.length + emptySlots} class="font-bold text-center py-3">
 						Extended Metrics
 					</td>
 				</tr>
@@ -314,6 +387,9 @@
 							{/if}
 						</td>
 					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
+					{/each}
 				</tr>
 
 				<!-- Retention Rate -->
@@ -333,6 +409,9 @@
 							{/if}
 						</td>
 					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
+					{/each}
 				</tr>
 
 				<!-- Implementation Time -->
@@ -347,6 +426,9 @@
 							</span>
 						</td>
 					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
+					{/each}
 				</tr>
 
 				<!-- Cloud/Client Classification -->
@@ -359,6 +441,9 @@
 							</span>
 						</td>
 					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
+					{/each}
 				</tr>
 
 				<!-- Access Depth -->
@@ -368,6 +453,9 @@
 						<td class="text-center">
 							<span class="text-base">{product.access_depth || 'N/A'}</span>
 						</td>
+					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
 					{/each}
 				</tr>
 
@@ -389,6 +477,9 @@
 							</span>
 						</td>
 					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
+					{/each}
 				</tr>
 
 				<!-- Description -->
@@ -401,12 +492,16 @@
 							</p>
 						</td>
 					{/each}
+					{#each Array(emptySlots) as _, i}
+						<td class="bg-base-200"></td>
+					{/each}
 				</tr>
 
 				<!-- Features Section Header -->
 				{#if products.some((p) => p.features && p.features.length > 0)}
 					<tr class="bg-base-300">
-						<td colspan={products.length + 1} class="font-bold text-center py-3">
+						<td class="sticky left-0 bg-base-300"></td>
+						<td colspan={products.length + emptySlots} class="font-bold text-center py-3">
 							Key Features
 						</td>
 					</tr>
@@ -432,9 +527,11 @@
 								{/if}
 							</td>
 						{/each}
+						{#each Array(emptySlots) as _, i}
+							<td class="bg-base-200"></td>
+						{/each}
 					</tr>
 				{/if}
 			</tbody>
 		</table>
 	</div>
-{/if}

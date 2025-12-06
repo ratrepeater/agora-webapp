@@ -1,4 +1,4 @@
-import { supabase } from '$lib/helpers/supabase';
+import { supabase } from '$lib/helpers/supabase.server';
 import type {
 	Product,
 	ProductWithRating,
@@ -7,6 +7,31 @@ import type {
 	ProductCategory
 } from '$lib/helpers/types';
 import type { TablesInsert, TablesUpdate } from '$lib/helpers/database.types';
+import { handleDatabaseError, logError } from '$lib/helpers/error-handler';
+import { cache, CACHE_KEYS, CACHE_TTL } from '$lib/helpers/cache';
+
+/**
+ * Pagination options for product queries
+ */
+export interface PaginationOptions {
+	page?: number; // Page number (1-indexed)
+	pageSize?: number; // Number of items per page
+}
+
+/**
+ * Paginated response wrapper
+ */
+export interface PaginatedResponse<T> {
+	data: T[];
+	pagination: {
+		page: number;
+		pageSize: number;
+		totalCount: number;
+		totalPages: number;
+		hasNextPage: boolean;
+		hasPreviousPage: boolean;
+	};
+}
 
 /**
  * ProductService - Handles all product-related database operations
@@ -14,61 +39,115 @@ import type { TablesInsert, TablesUpdate } from '$lib/helpers/database.types';
  */
 export class ProductService {
 	/**
-	 * Get all products with optional filters
+	 * Get all products with optional filters and pagination
 	 * @param filters - Optional filters to apply (category, price range, rating, featured, new)
-	 * @returns Array of products with ratings
+	 * @param pagination - Optional pagination options (page, pageSize)
+	 * @returns Array of products with ratings or paginated response
 	 */
-	async getAll(filters?: ProductFilters): Promise<ProductWithRating[]> {
-		let query = supabase
-			.from('products')
-			.select(
-				`
-				*,
-				reviews (rating)
-			`
-			)
-			.eq('status', 'published');
+	async getAll(
+		filters?: ProductFilters,
+		pagination?: PaginationOptions
+	): Promise<ProductWithRating[] | PaginatedResponse<ProductWithRating>> {
+		try {
+			// Default pagination values
+			const page = pagination?.page || 1;
+			const pageSize = pagination?.pageSize || 20;
+			const offset = (page - 1) * pageSize;
 
-		// Apply filters
-		if (filters?.category) {
-			// Get category ID from category key
-			const { data: categoryData } = await supabase
-				.from('categories')
-				.select('id')
-				.eq('key', filters.category)
-				.single();
+			let query = supabase
+				.from('products')
+				.select(
+					`
+					*,
+					reviews (rating),
+					product_scores (
+						fit_score,
+						feature_score,
+						integration_score,
+						review_score,
+						overall_score,
+						score_breakdown
+					)
+				`,
+					{ count: 'exact' }
+				)
+				.eq('status', 'published');
 
-			if (categoryData) {
-				query = query.eq('category_id', categoryData.id);
+			// Apply filters
+			if (filters?.category) {
+				// Get category ID from category key (case-insensitive)
+				const { data: categoryData } = await supabase
+					.from('categories')
+					.select('id')
+					.ilike('key', filters.category)
+					.single();
+
+				if (categoryData) {
+					query = query.eq('category_id', categoryData.id);
+				}
 			}
+
+			if (filters?.minPrice !== undefined) {
+				query = query.gte('price_cents', filters.minPrice * 100);
+			}
+
+			if (filters?.maxPrice !== undefined) {
+				query = query.lte('price_cents', filters.maxPrice * 100);
+			}
+
+			if (filters?.featured !== undefined) {
+				query = query.eq('is_featured', filters.featured);
+			}
+
+			// For "new" filter, get products created in last 30 days
+			if (filters?.new) {
+				const thirtyDaysAgo = new Date();
+				thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+				query = query.gte('created_at', thirtyDaysAgo.toISOString());
+			}
+
+			// Apply pagination if requested
+			if (pagination) {
+				query = query.range(offset, offset + pageSize - 1);
+			}
+
+			const { data, error, count } = await query.order('created_at', { ascending: false });
+
+			if (error) {
+				throw handleDatabaseError(error, 'getAll products');
+			}
+
+			// Enrich with ratings first
+			let products = this.enrichWithRatings(data || []);
+
+			// Apply rating filter after enrichment (since ratings are calculated from reviews)
+			if (filters?.minRating !== undefined) {
+				products = products.filter(p => (p.average_rating || 0) >= filters.minRating!);
+			}
+
+			// Return paginated response if pagination was requested
+			if (pagination && count !== null) {
+				const totalCount = count;
+				const totalPages = Math.ceil(totalCount / pageSize);
+
+				return {
+					data: products,
+					pagination: {
+						page,
+						pageSize,
+						totalCount,
+						totalPages,
+						hasNextPage: page < totalPages,
+						hasPreviousPage: page > 1
+					}
+				};
+			}
+
+			return products;
+		} catch (error) {
+			logError(error, 'ProductService.getAll');
+			throw error;
 		}
-
-		if (filters?.minPrice !== undefined) {
-			query = query.gte('price_cents', filters.minPrice * 100);
-		}
-
-		if (filters?.maxPrice !== undefined) {
-			query = query.lte('price_cents', filters.maxPrice * 100);
-		}
-
-		if (filters?.featured !== undefined) {
-			query = query.eq('is_featured', filters.featured);
-		}
-
-		// For "new" filter, get products created in last 30 days
-		if (filters?.new) {
-			const thirtyDaysAgo = new Date();
-			thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-			query = query.gte('created_at', thirtyDaysAgo.toISOString());
-		}
-
-		const { data, error } = await query.order('created_at', { ascending: false });
-
-		if (error) {
-			throw new Error(`Failed to fetch products: ${error.message}`);
-		}
-
-		return this.enrichWithRatings(data || []);
 	}
 
 	/**
@@ -77,28 +156,41 @@ export class ProductService {
 	 * @returns Product with ratings or null if not found
 	 */
 	async getById(id: string): Promise<ProductWithRating | null> {
-		const { data, error } = await supabase
-			.from('products')
-			.select(
+		try {
+			const { data, error } = await supabase
+				.from('products')
+				.select(
+					`
+					*,
+					reviews (rating),
+					product_scores (
+						fit_score,
+						feature_score,
+						integration_score,
+						review_score,
+						overall_score,
+						score_breakdown
+					)
 				`
-				*,
-				reviews (rating)
-			`
-			)
-			.eq('id', id)
-			.eq('status', 'published')
-			.single();
+				)
+				.eq('id', id)
+				.eq('status', 'published')
+				.single();
 
-		if (error) {
-			if (error.code === 'PGRST116') {
-				// Not found
-				return null;
+			if (error) {
+				if (error.code === 'PGRST116') {
+					// Not found
+					return null;
+				}
+				throw handleDatabaseError(error, 'getById product');
 			}
-			throw new Error(`Failed to fetch product: ${error.message}`);
-		}
 
-		const enriched = this.enrichWithRatings([data]);
-		return enriched[0] || null;
+			const enriched = this.enrichWithRatings([data]);
+			return enriched[0] || null;
+		} catch (error) {
+			logError(error, 'ProductService.getById');
+			throw error;
+		}
 	}
 
 	/**
@@ -112,7 +204,15 @@ export class ProductService {
 			.select(
 				`
 				*,
-				reviews (rating)
+				reviews (rating),
+				product_scores (
+					fit_score,
+					feature_score,
+					integration_score,
+					review_score,
+					overall_score,
+					score_breakdown
+				)
 			`
 			)
 			.eq('seller_id', sellerId)
@@ -131,11 +231,11 @@ export class ProductService {
 	 * @returns Array of products with ratings
 	 */
 	async getByCategory(category: ProductCategory): Promise<ProductWithRating[]> {
-		// Get category ID from category key
+		// Get category ID from category key (case-insensitive)
 		const { data: categoryData, error: categoryError } = await supabase
 			.from('categories')
 			.select('id')
-			.eq('key', category)
+			.ilike('key', category)
 			.single();
 
 		if (categoryError) {
@@ -147,7 +247,15 @@ export class ProductService {
 			.select(
 				`
 				*,
-				reviews (rating)
+				reviews (rating),
+				product_scores (
+					fit_score,
+					feature_score,
+					integration_score,
+					review_score,
+					overall_score,
+					score_breakdown
+				)
 			`
 			)
 			.eq('category_id', categoryData.id)
@@ -162,79 +270,137 @@ export class ProductService {
 	}
 
 	/**
-	 * Get featured products
+	 * Get featured products (with caching)
+	 * Results are cached for 15 minutes to improve performance
 	 * @returns Array of featured products with ratings
 	 */
 	async getFeatured(): Promise<ProductWithRating[]> {
-		const { data, error } = await supabase
-			.from('products')
-			.select(
-				`
-				*,
-				reviews (rating)
-			`
-			)
-			.eq('is_featured', true)
-			.eq('status', 'published')
-			.order('created_at', { ascending: false })
-			.limit(20);
+		return cache.getOrSet(
+			CACHE_KEYS.FEATURED_PRODUCTS,
+			async () => {
+				const { data, error } = await supabase
+					.from('products')
+					.select(
+						`
+						*,
+						reviews (rating),
+						product_scores (
+							fit_score,
+							feature_score,
+							integration_score,
+							review_score,
+							overall_score,
+							score_breakdown
+						)
+					`
+					)
+					.eq('is_featured', true)
+					.eq('status', 'published')
+					.order('created_at', { ascending: false })
+					.limit(20);
 
-		if (error) {
-			throw new Error(`Failed to fetch featured products: ${error.message}`);
-		}
+				if (error) {
+					throw new Error(`Failed to fetch featured products: ${error.message}`);
+				}
 
-		return this.enrichWithRatings(data || []);
+				return this.enrichWithRatings(data || []);
+			},
+			CACHE_TTL.LONG
+		);
 	}
 
 	/**
-	 * Get new products (created in last 30 days)
+	 * Get new products (created in last 30 days) with caching
+	 * Results are cached for 5 minutes to improve performance
 	 * @returns Array of new products with ratings
 	 */
 	async getNew(): Promise<ProductWithRating[]> {
-		const thirtyDaysAgo = new Date();
-		thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+		return cache.getOrSet(
+			CACHE_KEYS.NEW_PRODUCTS,
+			async () => {
+				const thirtyDaysAgo = new Date();
+				thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-		const { data, error } = await supabase
-			.from('products')
-			.select(
-				`
-				*,
-				reviews (rating)
-			`
-			)
-			.eq('status', 'published')
-			.gte('created_at', thirtyDaysAgo.toISOString())
-			.order('created_at', { ascending: false })
-			.limit(20);
+				const { data, error } = await supabase
+					.from('products')
+					.select(
+						`
+						*,
+						reviews (rating),
+						product_scores (
+							fit_score,
+							feature_score,
+							integration_score,
+							review_score,
+							overall_score,
+							score_breakdown
+						)
+					`
+					)
+					.eq('status', 'published')
+					.gte('created_at', thirtyDaysAgo.toISOString())
+					.order('created_at', { ascending: false })
+					.limit(20);
 
-		if (error) {
-			throw new Error(`Failed to fetch new products: ${error.message}`);
-		}
+				if (error) {
+					throw new Error(`Failed to fetch new products: ${error.message}`);
+				}
 
-		return this.enrichWithRatings(data || []);
+				return this.enrichWithRatings(data || []);
+			},
+			CACHE_TTL.MEDIUM
+		);
 	}
 
 	/**
 	 * Search products by query string
+	 * Implements full-text search across name, description fields
+	 * Supports combined search and filter queries
+	 * Returns empty array when no results found
+	 * 
 	 * @param query - Search query string
 	 * @param filters - Optional additional filters
-	 * @returns Array of matching products with ratings
+	 * @param pagination - Optional pagination options
+	 * @returns Array of matching products with ratings (empty array if no results) or paginated response
 	 */
-	async search(query: string, filters?: ProductFilters): Promise<ProductWithRating[]> {
+	async search(
+		query: string,
+		filters?: ProductFilters,
+		pagination?: PaginationOptions
+	): Promise<ProductWithRating[] | PaginatedResponse<ProductWithRating>> {
+		// If query is empty or only whitespace, return all products with filters
+		if (!query || query.trim() === '') {
+			return this.getAll(filters, pagination);
+		}
+
+		// Default pagination values
+		const page = pagination?.page || 1;
+		const pageSize = pagination?.pageSize || 20;
+		const offset = (page - 1) * pageSize;
+
 		// Build the search query
 		let dbQuery = supabase
 			.from('products')
 			.select(
 				`
 				*,
-				reviews (rating)
-			`
+				reviews (rating),
+				product_scores (
+					fit_score,
+					feature_score,
+					integration_score,
+					review_score,
+					overall_score,
+					score_breakdown
+				)
+			`,
+				{ count: 'exact' }
 			)
 			.eq('status', 'published');
 
 		// Search across name, short_description, and long_description
 		// Using ilike for case-insensitive partial matching
-		const searchPattern = `%${query}%`;
+		const searchPattern = `%${query.trim()}%`;
 		dbQuery = dbQuery.or(
 			`name.ilike.${searchPattern},short_description.ilike.${searchPattern},long_description.ilike.${searchPattern}`
 		);
@@ -244,7 +410,7 @@ export class ProductService {
 			const { data: categoryData } = await supabase
 				.from('categories')
 				.select('id')
-				.eq('key', filters.category)
+				.ilike('key', filters.category)
 				.single();
 
 			if (categoryData) {
@@ -270,13 +436,45 @@ export class ProductService {
 			dbQuery = dbQuery.gte('created_at', thirtyDaysAgo.toISOString());
 		}
 
-		const { data, error } = await dbQuery.order('created_at', { ascending: false });
+		// Apply pagination if requested
+		if (pagination) {
+			dbQuery = dbQuery.range(offset, offset + pageSize - 1);
+		}
+
+		const { data, error, count } = await dbQuery.order('created_at', { ascending: false });
 
 		if (error) {
 			throw new Error(`Failed to search products: ${error.message}`);
 		}
 
-		return this.enrichWithRatings(data || []);
+		// Enrich with ratings first
+		let products = this.enrichWithRatings(data || []);
+
+		// Apply rating filter after enrichment (since ratings are calculated from reviews)
+		if (filters?.minRating !== undefined) {
+			products = products.filter(p => (p.average_rating || 0) >= filters.minRating!);
+		}
+
+		// Return paginated response if pagination was requested
+		if (pagination && count !== null) {
+			const totalCount = count;
+			const totalPages = Math.ceil(totalCount / pageSize);
+
+			return {
+				data: products,
+				pagination: {
+					page,
+					pageSize,
+					totalCount,
+					totalPages,
+					hasNextPage: page < totalPages,
+					hasPreviousPage: page > 1
+				}
+			};
+		}
+
+		// Return empty array if no results found
+		return products;
 	}
 
 	/**
@@ -321,13 +519,13 @@ export class ProductService {
 
 	/**
 	 * Delete a product (seller only)
-	 * Sets status to 'deleted' instead of hard delete to preserve order history
+	 * Sets status to 'archived' instead of hard delete to preserve order history
 	 * @param id - Product ID
 	 */
 	async delete(id: string): Promise<void> {
 		const { error } = await supabase
 			.from('products')
-			.update({ status: 'deleted' })
+			.update({ status: 'archived' })
 			.eq('id', id);
 
 		if (error) {
@@ -336,9 +534,9 @@ export class ProductService {
 	}
 
 	/**
-	 * Helper method to enrich products with calculated rating data
-	 * @param products - Array of products with reviews
-	 * @returns Array of products with average_rating and review_count
+	 * Helper method to enrich products with calculated rating data and scores
+	 * @param products - Array of products with reviews and product_scores
+	 * @returns Array of products with average_rating, review_count, and scores
 	 */
 	private enrichWithRatings(products: any[]): ProductWithRating[] {
 		return products.map((product) => {
@@ -350,13 +548,22 @@ export class ProductService {
 
 			const review_count = ratings.length;
 
-			// Remove the reviews array and add calculated fields
-			const { reviews: _, ...productData } = product;
+			// Extract scores from product_scores array (should be single item or empty)
+			const scores = product.product_scores?.[0] || {};
+
+			// Remove the reviews and product_scores arrays and add calculated fields
+			const { reviews: _, product_scores: __, ...productData } = product;
 
 			return {
 				...productData,
 				average_rating,
-				review_count
+				review_count,
+				fit_score: scores.fit_score || 0,
+				feature_score: scores.feature_score || 0,
+				integration_score: scores.integration_score || 0,
+				review_score: scores.review_score || 0,
+				overall_score: scores.overall_score || 0,
+				score_breakdown: scores.score_breakdown
 			} as ProductWithRating;
 		});
 	}

@@ -3,7 +3,16 @@ import type { Tables } from './database.types';
 // Database table types from generated types
 export type Product = Tables<'products'>;
 export type Profile = Tables<'profiles'>;
-export type Review = Tables<'reviews'>;
+// Review type with correct column names (database has title and body, not review_text)
+export interface Review {
+	id: string;
+	product_id: string;
+	buyer_id: string;
+	rating: number;
+	title: string | null;
+	body: string | null;
+	created_at: string | null;
+}
 export type Bookmark = Tables<'bookmarks'>;
 export type CartItem = Tables<'cart_items'>;
 export type Order = Tables<'orders'>;
@@ -55,12 +64,18 @@ export interface Quote {
 	id: string;
 	product_id: string;
 	buyer_id: string;
+	seller_id: string;
 	company_size: number | null;
-	requirements_text: string | null;
+	requirements: Record<string, any> | null;
 	quoted_price: number;
 	pricing_breakdown: Record<string, any> | null;
 	status: QuoteStatus;
 	valid_until: string;
+	estimated_response_date: string | null;
+	sent_to_seller_at: string | null;
+	seller_notified: boolean;
+	buyer_company_info: Record<string, any> | null;
+	additional_notes: string | null;
 	created_at: string;
 	updated_at: string;
 }
@@ -137,12 +152,12 @@ export interface CompetitorRelationship {
 	updated_at: string;
 }
 
-// Enum types
-export type ProductCategory = 'HR' | 'Law' | 'Office' | 'DevTools';
+// Enum types (using database keys - lowercase)
+export type ProductCategory = 'hr' | 'legal' | 'marketing' | 'devtools';
 export type UserRole = 'buyer' | 'seller';
 export type CloudClientType = 'cloud' | 'client' | 'hybrid';
 export type ImplementationStatus = 'not_started' | 'in_progress' | 'completed' | 'paused';
-export type QuoteStatus = 'pending' | 'accepted' | 'rejected' | 'expired';
+export type QuoteStatus = 'pending' | 'sent' | 'accepted' | 'rejected' | 'expired';
 
 // Extended product type with ratings (Product already has price_cents from database)
 export interface ProductWithRating extends Product {
@@ -223,7 +238,6 @@ export interface BookmarkWithProduct extends Bookmark {
 export interface ReviewWithBuyer extends Review {
 	buyer: {
 		full_name: string | null;
-		email: string;
 	};
 }
 

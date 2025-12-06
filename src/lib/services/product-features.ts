@@ -1,4 +1,4 @@
-import { supabase } from '$lib/helpers/supabase';
+import { supabase } from '$lib/helpers/supabase.server';
 import type { ProductFeature } from '$lib/helpers/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
