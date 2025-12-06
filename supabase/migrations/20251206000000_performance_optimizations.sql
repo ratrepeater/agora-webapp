@@ -35,8 +35,9 @@ create index if not exists idx_reviews_created
   on public.reviews(created_at desc);
 
 -- Composite index for product events analytics
+-- Using occurred_at directly since date casting isn't immutable
 create index if not exists idx_product_events_date_type 
-  on public.product_events(occurred_at::date, event_type, product_id);
+  on public.product_events(occurred_at, event_type, product_id);
 
 -- Index for buyer's recent orders
 create index if not exists idx_orders_buyer_created 
@@ -302,16 +303,17 @@ end;
 $$ language plpgsql stable;
 
 -- ============================================================================
--- VACUUM AND ANALYZE
+-- ANALYZE TABLES
 -- ============================================================================
--- Run vacuum and analyze to update statistics for the query planner
+-- Update statistics for the query planner
+-- Note: VACUUM must be run separately outside of transactions
 
-vacuum analyze public.products;
-vacuum analyze public.reviews;
-vacuum analyze public.product_events;
-vacuum analyze public.orders;
-vacuum analyze public.cart_items;
-vacuum analyze public.bookmarks;
+analyze public.products;
+analyze public.reviews;
+analyze public.product_events;
+analyze public.orders;
+analyze public.cart_items;
+analyze public.bookmarks;
 
 -- ============================================================================
 -- COMMENTS

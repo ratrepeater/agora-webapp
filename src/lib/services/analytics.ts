@@ -805,6 +805,8 @@ export class AnalyticsService {
 
 		const productIds = (products || []).map((p) => p.id);
 
+		console.log('Seller products:', products?.length, 'Product IDs:', productIds);
+
 		// Get analytics for all products
 		const { data: analyticsData } = await supabase
 			.from('product_analytics_daily')
@@ -814,17 +816,33 @@ export class AnalyticsService {
 
 		const records = analyticsData || [];
 
+		console.log('Analytics records fetched:', records.length);
+		if (records.length > 0) {
+			console.log('Sample record:', records[0]);
+		}
+
 		// Calculate overview metrics
 		const total_products = products?.length || 0;
-		const total_revenue = records.reduce((sum, r) => sum + (r.revenue || 0), 0);
+		
+		// Calculate total revenue from analytics (sum of all purchases * product prices)
+		// Get total purchases from analytics
+		const total_purchases = records.reduce((sum, r) => sum + ((r as any).purchases || 0), 0);
+		
+		// Calculate revenue by summing up each product's (purchases * price)
+		let total_revenue = 0;
+		for (const product of products || []) {
+			const productRecords = records.filter((r) => (r as any).product_id === product.id);
+			const productPurchases = productRecords.reduce((sum, r) => sum + ((r as any).purchases || 0), 0);
+			total_revenue += productPurchases * (product as any).price_cents;
+		}
 
-		// Get total orders
-		const { data: orders } = await supabase
+		// Get total orders from the orders table by counting distinct order IDs for this seller's products
+		const { data: orderItems } = await supabase
 			.from('order_items')
 			.select('order_id')
 			.in('product_id', productIds);
 
-		const uniqueOrderIds = new Set((orders || []).map((o) => o.order_id));
+		const uniqueOrderIds = new Set((orderItems || []).map((o) => o.order_id));
 		const total_orders = uniqueOrderIds.size;
 
 		// Calculate average rating across all products
@@ -837,7 +855,7 @@ export class AnalyticsService {
 		// Build time series data
 		const dateMap = new Map<string, { revenue: number; orders: number; conversions: number }>();
 
-		records.forEach((r) => {
+		records.forEach((r: any) => {
 			const existing = dateMap.get(r.date) || { revenue: 0, orders: 0, conversions: 0 };
 			dateMap.set(r.date, {
 				revenue: existing.revenue + (r.revenue || 0),
@@ -866,10 +884,10 @@ export class AnalyticsService {
 		// Calculate product performance summaries
 		const productPerformances = await Promise.all(
 			productIds.map(async (productId) => {
-				const productRecords = records.filter((r) => r.product_id === productId);
-				const views = productRecords.reduce((sum, r) => sum + (r.views || 0), 0);
-				const purchases = productRecords.reduce((sum, r) => sum + (r.purchases || 0), 0);
-				const revenue = productRecords.reduce((sum, r) => sum + (r.revenue || 0), 0);
+				const productRecords = records.filter((r: any) => r.product_id === productId);
+				const views = productRecords.reduce((sum, r: any) => sum + (r.views || 0), 0);
+				const purchases = productRecords.reduce((sum, r: any) => sum + (r.purchases || 0), 0);
+				const revenue = productRecords.reduce((sum, r: any) => sum + (r.revenue || 0), 0);
 				const conversion_rate = views > 0 ? purchases / views : 0;
 
 				const product = products?.find((p) => p.id === productId);
@@ -878,8 +896,8 @@ export class AnalyticsService {
 				// Calculate growth rate (last 7 days vs previous 7 days)
 				const last7Days = productRecords.slice(-7);
 				const previous7Days = productRecords.slice(-14, -7);
-				const recentRevenue = last7Days.reduce((sum, r) => sum + (r.revenue || 0), 0);
-				const previousRevenue = previous7Days.reduce((sum, r) => sum + (r.revenue || 0), 0);
+				const recentRevenue = last7Days.reduce((sum, r: any) => sum + (r.revenue || 0), 0);
+				const previousRevenue = previous7Days.reduce((sum, r: any) => sum + (r.revenue || 0), 0);
 				const growth_rate =
 					previousRevenue > 0 ? (recentRevenue - previousRevenue) / previousRevenue : 0;
 
