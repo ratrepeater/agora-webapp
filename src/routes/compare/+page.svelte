@@ -148,6 +148,11 @@
 			});
 
 			if (!response.ok) {
+				if (response.status === 401) {
+					alert('Please sign in to add items to the cart.');
+					goto('/auth/signin?redirectTo=/compare');
+					return;
+				}
 				throw new Error('Failed to add to cart');
 			}
 
@@ -232,9 +237,18 @@
 	function handleCategoryChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
 		const category = target.value as ProductCategory;
-		comparisonStore.setActiveCategory(category);
-		// Update URL - don't set selectedCategory here, let the effect handle it
-		goto(`/compare?category=${category}`, { replaceState: true, noScroll: true });
+		
+		// Check if the new category has no products
+		const categoryProducts = productsByCategory[category] || [];
+		
+		if (categoryProducts.length === 0) {
+			// Force a full page refresh for empty categories
+			window.location.href = `/compare?category=${category}`;
+		} else {
+			comparisonStore.setActiveCategory(category);
+			// Update URL - don't set selectedCategory here, let the effect handle it
+			goto(`/compare?category=${category}`, { replaceState: true, noScroll: true });
+		}
 	}
 </script>
 

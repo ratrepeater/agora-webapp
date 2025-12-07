@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import ProductDetailView from '$lib/components/ProductDetailView.svelte';
 	import ProductRow from '$lib/components/ProductRow.svelte';
 	import ComparisonBar from '$lib/components/ComparisonBar.svelte';
@@ -49,7 +50,8 @@
 
 	async function handleBookmark() {
 		if (!data.isAuthenticated) {
-			goto('/auth/signin');
+			alert('Please sign in to bookmark items.');
+			goto('/auth/signin?redirectTo=' + encodeURIComponent($page.url.pathname));
 			return;
 		}
 
@@ -69,16 +71,25 @@
 			if (!response.ok) {
 				// Revert on error
 				isBookmarked = wasBookmarked;
+				
+				if (response.status === 401) {
+					alert('Please sign in to bookmark items.');
+					goto('/auth/signin?redirectTo=' + encodeURIComponent($page.url.pathname));
+					return;
+				}
+				
 				throw new Error('Failed to bookmark');
 			}
 		} catch (error) {
 			console.error('Bookmark error:', error);
+			alert('Failed to bookmark. Please try again.');
 		}
 	}
 
 	async function handleAddToCart() {
 		if (!data.isAuthenticated) {
-			goto('/auth/signin');
+			alert('Please sign in to add items to the cart.');
+			goto('/auth/signin?redirectTo=' + encodeURIComponent($page.url.pathname));
 			return;
 		}
 
@@ -92,6 +103,11 @@
 			});
 
 			if (!response.ok) {
+				if (response.status === 401) {
+					alert('Please sign in to add items to the cart.');
+					goto('/auth/signin?redirectTo=' + encodeURIComponent($page.url.pathname));
+					return;
+				}
 				throw new Error('Failed to add to cart');
 			}
 

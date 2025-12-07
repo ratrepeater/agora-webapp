@@ -146,8 +146,9 @@
 					bookmarkedProductIds = newSet;
 				}
 				
-				// If unauthorized, redirect to sign in
+				// If unauthorized, show message and redirect to sign in
 				if (response.status === 401) {
+					alert('Please sign in to bookmark items.');
 					goto('/auth/signin?redirectTo=/');
 					return;
 				}
@@ -156,6 +157,7 @@
 			}
 		} catch (error) {
 			console.error('Bookmark error:', error);
+			alert('Failed to bookmark. Please try again.');
 		} finally {
 			bookmarkingProducts.delete(productId);
 			bookmarkingProducts = bookmarkingProducts;
@@ -171,6 +173,11 @@
 			});
 
 			if (!response.ok) {
+				if (response.status === 401) {
+					alert('Please sign in to add items to the cart.');
+					goto('/auth/signin?redirectTo=/');
+					return;
+				}
 				throw new Error('Failed to add to cart');
 			}
 

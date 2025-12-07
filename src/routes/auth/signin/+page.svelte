@@ -12,12 +12,32 @@
 	const authService = new AuthService(supabase);
 
 	let error = $derived(form?.error || '');
+	
+	// Get feature name from redirectTo parameter
+	const featureName = $derived(() => {
+		const redirectTo = $page.url.searchParams.get('redirectTo');
+		if (!redirectTo) return null;
+		
+		if (redirectTo.includes('/bookmarks')) return 'Bookmarks';
+		if (redirectTo.includes('/compare')) return 'Compare';
+		if (redirectTo.includes('/dashboard')) return 'Dashboard';
+		if (redirectTo.includes('/orders')) return 'Orders';
+		if (redirectTo.includes('/cart')) return 'Cart';
+		return null;
+	});
 </script>
 
 <div class="min-h-screen flex items-center justify-center bg-base-200">
 	<div class="card w-96 bg-base-100 shadow-xl">
 		<div class="card-body">
 			<h2 class="card-title text-2xl font-bold mb-4">Sign In</h2>
+			
+			{#if featureName()}
+				<div class="alert alert-info mb-4">
+					<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+					<span>Sign in to access {featureName()}</span>
+				</div>
+			{/if}
 
 			{#if error}
 				<div class="alert alert-error mb-4">
@@ -68,13 +88,8 @@
 				<button
 					type="button"
 					class="btn btn-outline w-full"
-					onclick={async () => {
-						try {
-							const redirectTo = $page.url.searchParams.get('redirectTo') || '/';
-							await authService.signInWithOAuth('google', `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`);
-						} catch (e: any) {
-							error = e.message;
-						}
+					onclick={() => {
+						alert('This feature is under development');
 					}}
 				>
 					<svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -101,13 +116,8 @@
 				<button
 					type="button"
 					class="btn btn-outline w-full"
-					onclick={async () => {
-						try {
-							const redirectTo = $page.url.searchParams.get('redirectTo') || '/';
-							await authService.signInWithOAuth('github', `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`);
-						} catch (e: any) {
-							error = e.message;
-						}
+					onclick={() => {
+						alert('This feature is under development');
 					}}
 				>
 					<svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">

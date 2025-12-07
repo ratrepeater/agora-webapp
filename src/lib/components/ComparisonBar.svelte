@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import { comparisonStore } from '$lib/stores/comparison';
 	import type { ProductWithRating, ProductCategory } from '$lib/helpers/types';
 
@@ -62,6 +63,14 @@
 	}
 
 	function handleCompare() {
+		// Show the bar if it's hidden
+		if (isCollapsed) {
+			isCollapsed = false;
+			if (typeof window !== 'undefined') {
+				localStorage.setItem('comparisonBarCollapsed', 'false');
+			}
+		}
+		
 		if (activeCategory) {
 			goto(`/compare?category=${activeCategory}`);
 		} else {
@@ -82,11 +91,93 @@
 
 	// Check if any category has products
 	let hasAnyProducts = $derived(totalCount > 0);
+	
+	// Collapse/expand state - persisted in localStorage
+	let isCollapsed = $state(false);
+	let showButton = $state(false); // Controls which button to show (delayed for animation)
+	let previousTotalCount = $state(0);
+	
+	// Load collapsed state from localStorage on mount
+	onMount(() => {
+		const saved = localStorage.getItem('comparisonBarCollapsed');
+		if (saved !== null) {
+			const collapsed = saved === 'true';
+			isCollapsed = collapsed;
+			showButton = collapsed; // Sync button state on load
+		}
+		// Set initial count
+		previousTotalCount = totalCount;
+	});
+	
+	// Track count changes and auto-show bar when products are added
+	$effect(() => {
+		// Only auto-show if count actually increased (user added a product)
+		if (totalCount > previousTotalCount && totalCount > 0 && previousTotalCount > 0) {
+			isCollapsed = false;
+			showButton = false;
+			if (typeof window !== 'undefined') {
+				localStorage.setItem('comparisonBarCollapsed', 'false');
+			}
+		}
+		previousTotalCount = totalCount;
+	});
+	
+	function toggleCollapse() {
+		if (isCollapsed) {
+			// Expanding - change button immediately, then expand
+			showButton = false;
+			isCollapsed = false;
+		} else {
+			// Collapsing - collapse first, then change button after animation
+			isCollapsed = true;
+			setTimeout(() => {
+				showButton = true;
+			}, 300); // Match the transition duration
+		}
+		
+		// Save state to localStorage
+		if (typeof window !== 'undefined') {
+			localStorage.setItem('comparisonBarCollapsed', String(isCollapsed));
+		}
+	}
 </script>
 
 {#if hasAnyProducts}
-	<div class="fixed bottom-0 left-0 right-0 bg-base-100 border-t-2 border-base-300 shadow-2xl z-50">
-		<div class="container mx-auto px-8 py-4">
+	<!-- Show Button - Fixed at bottom when fully collapsed -->
+	{#if showButton}
+		<button
+			type="button"
+			onclick={toggleCollapse}
+			class="fixed bottom-2 left-1/2 -translate-x-1/2 z-[51] btn btn-primary btn-xs rounded-lg shadow-lg"
+			aria-label="Show comparison bar"
+		>
+			<!-- Up arrow -->
+			<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+			</svg>
+		</button>
+	{/if}
+	
+	<!-- Comparison Bar Wrapper -->
+	<div class="fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out {isCollapsed ? 'translate-y-full' : 'translate-y-0'}">
+		<!-- Comparison Bar Content -->
+		<div class="bg-base-100 border-t-2 border-base-300 shadow-2xl relative">
+			<!-- Toggle Button - Inside the bar at the top (slides with bar) -->
+			{#if !showButton}
+				<button
+					type="button"
+					onclick={toggleCollapse}
+					class="absolute left-1/2 -translate-x-1/2 top-1 z-10 btn btn-primary btn-xs rounded-lg shadow-lg"
+					aria-label="Hide comparison bar"
+				>
+					<!-- Down arrow -->
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+					</svg>
+				</button>
+			{/if}
+			
+		<div class="container mx-auto px-8 py-4 pt-8">
 			<div class="flex items-center justify-between gap-8">
 				<div class="flex items-center gap-4 flex-1 min-w-0">
 					<!-- Category Dropdown with Label -->
@@ -162,6 +253,7 @@
 					</svg>
 				</button>
 			</div>
+		</div>
 		</div>
 	</div>
 {/if}

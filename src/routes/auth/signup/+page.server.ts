@@ -18,6 +18,17 @@ export const actions = {
 			return fail(400, { error: 'Password must be at least 6 characters' });
 		}
 
+		// Check if user already exists
+		const { data: existingUser } = await locals.supabase
+			.from('profiles')
+			.select('id')
+			.eq('email', email)
+			.single();
+
+		if (existingUser) {
+			return fail(400, { error: 'Email is already registered. Use a different email.' });
+		}
+
 		const { data, error } = await locals.supabase.auth.signUp({
 			email,
 			password,
@@ -36,7 +47,16 @@ export const actions = {
 
 		if (error) {
 			console.error('Sign up error:', error.message);
+			// Check if email is already registered
+			if (error.message.toLowerCase().includes('already') || error.message.toLowerCase().includes('registered')) {
+				return fail(400, { error: 'Email is already registered. Use a different email.' });
+			}
 			return fail(400, { error: error.message });
+		}
+
+		// If no session was created, the email might already be registered
+		if (!data.session && data.user) {
+			return fail(400, { error: 'Email is already registered. Use a different email.' });
 		}
 
 		// Profile will be created by database trigger

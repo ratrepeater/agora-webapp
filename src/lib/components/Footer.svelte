@@ -2,8 +2,15 @@
 	<nav class="grid grid-flow-col gap-4">
 		<a href="/" class="link link-hover">Home</a>
 		<a href="/marketplace" class="link link-hover">Marketplace</a>
-		<a href="/about" class="link link-hover">About</a>
-		<a href="/contact" class="link link-hover">Contact</a>
+		<button
+			type="button"
+			class="link link-hover"
+			onclick={() => {
+				alert('This feature is under development');
+			}}
+		>
+			Contact
+		</button>
 	</nav>
 	<nav>
 		<div class="grid grid-flow-col gap-4">

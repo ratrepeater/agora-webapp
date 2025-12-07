@@ -3,10 +3,10 @@ import { BookmarkService } from '$lib/services/bookmarks';
 import { CartService } from '$lib/services/cart';
 import { redirect } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	// Ensure user is authenticated
 	if (!locals.session?.user) {
-		throw redirect(303, '/auth/signin');
+		throw redirect(303, `/auth/signin?redirectTo=${encodeURIComponent(url.pathname)}`);
 	}
 
 	console.log('Loading bookmarks for user:', locals.session.user.id);
