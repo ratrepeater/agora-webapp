@@ -62,15 +62,15 @@
 		}
 	}
 
-	// Subscribe to comparison store and fetch products with scores
+	// Track URL category separately to avoid reactive loops
+	let urlCategory = $derived($page.url.searchParams.get('category') as ProductCategory | null);
+
+	// Subscribe to comparison store
 	$effect(() => {
-		const unsubscribe = comparisonStore.subscribe(async (state) => {
+		const unsubscribe = comparisonStore.subscribe((state) => {
 			productsByCategory = state.productsByCategory;
 			
-			// Get category from URL query param (only read once to avoid loops)
-			const urlCategory = $page.url.searchParams.get('category') as ProductCategory | null;
-			
-			// Determine selected category (only if not already set by user interaction)
+			// Determine selected category
 			let newCategory: ProductCategory | null = null;
 			if (urlCategory && categories.includes(urlCategory)) {
 				newCategory = urlCategory;
@@ -88,19 +88,34 @@
 			if (newCategory !== selectedCategory) {
 				selectedCategory = newCategory;
 			}
+		});
+		return unsubscribe;
+	});
+
+	// Fetch products with scores when category or products change
+	$effect(() => {
+		async function loadProducts() {
+			if (!selectedCategory) {
+				products = [];
+				categoryMetrics = { metricDefinitions: [], metrics: {} };
+				return;
+			}
+
+			const categoryProducts = productsByCategory[selectedCategory] || [];
+			console.log('Compare page - loading products for category:', selectedCategory, 'count:', categoryProducts.length);
 			
-			// Get products for selected category
-			const categoryProducts = selectedCategory ? state.productsByCategory[selectedCategory] : [];
-			
-			// Fetch products with scores if we have products
 			if (categoryProducts.length > 0) {
 				const ids = categoryProducts.map(p => p.id);
+				console.log('Compare page - fetching products with IDs:', ids);
 				try {
 					const response = await fetch(`/api/products/with-scores?productIds=${ids.join(',')}`);
 					if (response.ok) {
 						const data = await response.json();
 						products = data.products || [];
+						console.log('Compare page - loaded products:', products.length);
+						console.log('Compare page - products data:', products);
 					} else {
+						console.error('Compare page - failed to fetch products with scores:', response.status);
 						products = categoryProducts;
 					}
 				} catch (error) {
@@ -111,11 +126,13 @@
 				// Fetch category metrics after products are loaded
 				await fetchCategoryMetrics();
 			} else {
+				console.log('Compare page - no products in category:', selectedCategory);
 				products = [];
 				categoryMetrics = { metricDefinitions: [], metrics: {} };
 			}
-		});
-		return unsubscribe;
+		}
+
+		loadProducts();
 	});
 
 	function handleRemove(productId: string) {

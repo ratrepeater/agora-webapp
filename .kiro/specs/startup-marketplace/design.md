@@ -28,19 +28,19 @@ The application follows a three-tier architecture:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Presentation Layer                       │
+│                     Presentation Layer                      │
 │  (SvelteKit Pages, Components, Client-Side State)           │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                      Business Logic Layer                    │
+│                      Business Logic Layer                   │
 │  (SvelteKit Server Routes, Load Functions, Actions)         │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                       Data Access Layer                      │
+│                       Data Access Layer                     │
 │  (Supabase Client, Database Queries, Auth, Storage)         │
 └─────────────────────────────────────────────────────────────┘
 ```

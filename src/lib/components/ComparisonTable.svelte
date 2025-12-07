@@ -50,6 +50,35 @@
 		return 'overall_score' in p;
 	}
 
+	// Helper to format metric labels (replace underscores with spaces and capitalize)
+	function formatMetricLabel(label: string): string {
+		if (!label) return '';
+		const formatted = label
+			.replace(/_/g, ' ')
+			.split(' ')
+			.map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+			.join(' ');
+		console.log('Formatting label:', label, '→', formatted);
+		return formatted;
+	}
+
+	// Get color class based on score - refined red/yellow/green gradient
+	function getScoreColor(score: number): string {
+		// Green range (80-100): deeper green as score increases
+		if (score >= 90) return 'text-green-600'; // Deep green: 90-100
+		if (score >= 80) return 'text-green-500'; // Standard green: 80-89
+		
+		// Yellow range (60-79): slight gradient toward lime (high) and orange (low)
+		if (score >= 75) return 'text-lime-500'; // Lime-ish: 75-79
+		if (score >= 70) return 'text-yellow-500'; // Standard yellow: 70-74
+		if (score >= 60) return 'text-orange-400'; // Orange-ish: 60-69
+		
+		// Red range (0-59): darker red as score decreases
+		if (score >= 50) return 'text-red-500'; // Standard red: 50-59
+		if (score >= 30) return 'text-red-600'; // Darker red: 30-49
+		return 'text-red-700'; // Very dark red: 0-29
+	}
+
 	// Helper function to get the highest value in a metric across products
 	function getHighestValue(metric: string): number {
 		return Math.max(...products.map((p) => {
@@ -115,6 +144,14 @@
 </script>
 
 <!-- Comparison table -->
+{#if products.length === 0}
+	<div class="text-center py-16">
+		<p class="text-xl mb-4">No products to compare</p>
+		<button class="btn btn-primary" onclick={() => onaddproduct?.()}>
+			Browse Products
+		</button>
+	</div>
+{:else}
 <div class="overflow-x-auto">
 		<table class="table w-full" style="table-layout: fixed;">
 			<thead>
@@ -317,12 +354,9 @@
 					{#each products as product}
 						<td class="text-center">
 							<div class="flex items-center justify-center gap-2">
-								<span
-									class="text-xl {isBestScore(product.overall_score || 0, 'overall_score')
-										? 'text-success font-bold'
-										: 'text-base-content'}"
-								>
-									{product.overall_score || 0}
+								<span class="text-xl">
+									<span class="{getScoreColor(product.overall_score || 0)}">
+										{product.overall_score || 0}</span><span class="text-sm text-gray-400 ml-0.5">/100</span>
 								</span>
 								{#if isBestScore(product.overall_score || 0, 'overall_score')}
 									<div class="badge badge-success badge-sm">Highest</div>
@@ -348,12 +382,9 @@
 					{#each products as product}
 						<td class="text-center">
 							<div class="flex items-center justify-center gap-2">
-								<span
-									class="text-xl {isBestScore(product.fit_score || 0, 'fit_score')
-										? 'text-success font-bold'
-										: 'text-base-content'}"
-								>
-									{product.fit_score || 0}
+								<span class="text-xl">
+									<span class="{getScoreColor(product.fit_score || 0)}">
+										{product.fit_score || 0}</span><span class="text-sm text-gray-400 ml-0.5">/100</span>
 								</span>
 								{#if isBestScore(product.fit_score || 0, 'fit_score')}
 									<div class="badge badge-success badge-sm">Highest</div>
@@ -372,16 +403,13 @@
 					{#each products as product}
 						<td class="text-center">
 							<div class="flex items-center justify-center gap-2">
-								<span
-									class="text-xl {isBestScore(product.feature_score || 0, 'feature_score')
-										? 'text-success font-bold'
-										: 'text-base-content'}"
-							>
-								{product.feature_score || 0}
-							</span>
-							{#if isBestScore(product.feature_score || 0, 'feature_score')}
-								<div class="badge badge-success badge-sm">Highest</div>
-							{/if}
+								<span class="text-xl">
+									<span class="{getScoreColor(product.feature_score || 0)}">
+										{product.feature_score || 0}</span><span class="text-sm text-gray-400 ml-0.5">/100</span>
+								</span>
+								{#if isBestScore(product.feature_score || 0, 'feature_score')}
+									<div class="badge badge-success badge-sm">Highest</div>
+								{/if}
 							</div>
 						</td>
 					{/each}
@@ -398,12 +426,9 @@
 					{#each products as product}
 						<td class="text-center">
 							<div class="flex items-center justify-center gap-2">
-								<span
-									class="text-xl {isBestScore(product.integration_score || 0, 'integration_score')
-										? 'text-success font-bold'
-										: 'text-base-content'}"
-								>
-									{product.integration_score || 0}
+								<span class="text-xl">
+									<span class="{getScoreColor(product.integration_score || 0)}">
+										{product.integration_score || 0}</span><span class="text-sm text-gray-400 ml-0.5">/100</span>
 								</span>
 								{#if isBestScore(product.integration_score || 0, 'integration_score')}
 									<div class="badge badge-success badge-sm">Highest</div>
@@ -422,12 +447,9 @@
 					{#each products as product}
 						<td class="text-center">
 							<div class="flex items-center justify-center gap-2">
-								<span
-									class="text-xl {isBestScore(product.review_score || 0, 'review_score')
-										? 'text-success font-bold'
-										: 'text-base-content'}"
-								>
-									{product.review_score || 0}
+								<span class="text-xl">
+									<span class="{getScoreColor(product.review_score || 0)}">
+										{product.review_score || 0}</span><span class="text-sm text-gray-400 ml-0.5">/100</span>
 								</span>
 								{#if isBestScore(product.review_score || 0, 'review_score')}
 									<div class="badge badge-success badge-sm">Highest</div>
@@ -506,7 +528,7 @@
 					{#each categoryMetrics.metricDefinitions as metricDef}
 						<tr>
 							<td class="sticky left-0 bg-base-200 font-semibold">
-								{metricDef.label}
+								{formatMetricLabel(metricDef.label)}
 								{#if metricDef.description}
 									<div class="text-xs font-normal text-base-content/60 mt-1">
 										{metricDef.description}
@@ -596,3 +618,5 @@
 			</tbody>
 		</table>
 	</div>
+
+{/if}

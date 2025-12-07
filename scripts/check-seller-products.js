@@ -1,11 +1,6 @@
 #!/usr/bin/env node
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = 'https://sbfpxgsgabkgbutzhgwm.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNiZnB4Z3NnYWJrZ2J1dHpoZ3dtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjE4ODQ4MywiZXhwIjoyMDc3NzY0NDgzfQ.FGeTitHzEIeHKkSkvfvincnoRRHFTwYLb156uoPXP9I';
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from './config.js';
 
 async function checkSellerProducts() {
   console.log('Checking seller products and analytics...\n');

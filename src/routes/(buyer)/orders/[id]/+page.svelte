@@ -167,7 +167,7 @@
 								Download Now
 							</button>
 							<a
-								href="/businesses/{item.product_id}"
+								href="/products/{item.product_id}"
 								class="btn btn-ghost btn-sm"
 							>
 								View Product

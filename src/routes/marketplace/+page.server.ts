@@ -1,8 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { productService } from '$lib/services/products';
-import { BookmarkService } from '$lib/services/bookmarks';
-import { CartService } from '$lib/services/cart';
-import type { ProductFilters, ProductCategory } from '$lib/helpers/types';
+import type { ProductCategory } from '$lib/helpers/types';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	try {
@@ -15,40 +12,99 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		const featured = url.searchParams.get('filter') === 'featured';
 		const isNew = url.searchParams.get('filter') === 'new';
 
-		// Build filters object
-		const filters: ProductFilters = {};
+		// Build query directly - simple and straightforward
+		let query = locals.supabase
+			.from('products')
+			.select(`
+				*,
+				categories(key),
+				reviews(rating)
+			`)
+			.eq('status', 'published');
 
+		// Apply filters
 		if (categoryParam && categoryParam !== 'All') {
-			filters.category = categoryParam as ProductCategory;
+			// Get category ID first
+			const { data: categoryData } = await locals.supabase
+				.from('categories')
+				.select('id')
+				.eq('key', categoryParam)
+				.single();
+			
+			if (categoryData) {
+				query = query.eq('category_id', categoryData.id);
+			}
 		}
 
 		if (minPrice) {
-			filters.minPrice = parseFloat(minPrice);
+			query = query.gte('price_cents', parseFloat(minPrice) * 100);
 		}
 
 		if (maxPrice) {
-			filters.maxPrice = parseFloat(maxPrice);
-		}
-
-		if (minRating) {
-			filters.minRating = parseFloat(minRating);
+			query = query.lte('price_cents', parseFloat(maxPrice) * 100);
 		}
 
 		if (featured) {
-			filters.featured = true;
+			query = query.eq('is_featured', true);
 		}
 
 		if (isNew) {
-			filters.new = true;
+			const thirtyDaysAgo = new Date();
+			thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+			query = query.gte('created_at', thirtyDaysAgo.toISOString());
 		}
 
-		// Fetch products based on search query or filters
-		let products;
+		// Search by name if query provided
 		if (searchQuery) {
-			products = await productService.search(searchQuery, filters);
-		} else {
-			products = await productService.getAll(filters);
+			query = query.ilike('name', `%${searchQuery}%`);
 		}
+
+		const { data: productsData, error: productsError } = await query.order('created_at', { ascending: false });
+
+		if (productsError) {
+			console.error('Error fetching products:', productsError);
+			throw productsError;
+		}
+
+		// Get product IDs for fetching scores
+		const productIds = productsData?.map(p => p.id) || [];
+
+		// Fetch scores
+		const { data: scores } = await locals.supabase
+			.from('product_scores')
+			.select('*')
+			.in('product_id', productIds);
+
+		const scoresMap = new Map(scores?.map(s => [s.product_id, s]) || []);
+
+		// Enrich products
+		const products = (productsData || []).map((product: any) => {
+			const reviews = product.reviews || [];
+			const averageRating = reviews.length > 0
+				? reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length
+				: 0;
+			
+			const productScores = scoresMap.get(product.id);
+			const category = product.categories?.key || null;
+
+			return {
+				...product,
+				category,
+				average_rating: averageRating,
+				review_count: reviews.length,
+				fit_score: productScores?.fit_score || 0,
+				feature_score: productScores?.feature_score || 0,
+				integration_score: productScores?.integration_score || 0,
+				review_score: productScores?.review_score || 0,
+				overall_score: productScores?.overall_score || 0,
+				score_breakdown: productScores?.score_breakdown
+			};
+		});
+
+		console.log('Marketplace - Sample product IDs:', {
+			firstProduct: products[0]?.id,
+			firstProductName: products[0]?.name
+		});
 
 		// Fetch user's bookmarks and cart if authenticated
 		let bookmarkedProductIds: string[] = [];
@@ -56,18 +112,23 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		
 		if (locals.session?.user) {
 			try {
-				const bookmarkService = new BookmarkService(locals.supabase);
-				const bookmarks = await bookmarkService.getByBuyer(locals.session.user.id);
-				bookmarkedProductIds = bookmarks.map(b => b.product_id);
+				const { data: bookmarks } = await locals.supabase
+					.from('bookmarks')
+					.select('product_id')
+					.eq('buyer_id', locals.session.user.id);
+				
+				bookmarkedProductIds = (bookmarks || []).map(b => b.product_id);
 			} catch (error) {
 				console.error('Error loading bookmarks:', error);
 			}
 
 			try {
-				const cartService = new CartService(locals.supabase);
-				const cartItems = await cartService.getItems(locals.session.user.id);
-				// Build a map of product_id -> quantity
-				cartQuantities = cartItems.reduce((acc, item) => {
+				const { data: cartItems } = await locals.supabase
+					.from('cart_items')
+					.select('product_id, quantity')
+					.eq('buyer_id', locals.session.user.id);
+
+				cartQuantities = (cartItems || []).reduce((acc, item) => {
 					acc[item.product_id] = item.quantity || 1;
 					return acc;
 				}, {} as Record<string, number>);

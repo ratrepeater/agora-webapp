@@ -23,23 +23,10 @@ export class RecommendationService {
 		const sixtyDaysAgo = new Date();
 		sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-		const { data, error } = await this.client
+		// Fetch products
+		const { data: productsData, error } = await this.client
 			.from('products')
-			.select(
-				`
-				*,
-				reviews (rating),
-				product_scores (
-					fit_score,
-					feature_score,
-					integration_score,
-					review_score,
-					overall_score,
-					score_breakdown
-				),
-				category:categories!category_id (key)
-			`
-			)
+			.select('*')
 			.eq('status', 'published')
 			.or(`is_featured.eq.true,created_at.gte.${sixtyDaysAgo.toISOString()}`)
 			.order('is_featured', { ascending: false })
@@ -50,7 +37,9 @@ export class RecommendationService {
 			throw new Error(`Failed to fetch new and notable products: ${error.message}`);
 		}
 
-		return this.enrichWithRatings(data || []);
+		// Enrich with category, reviews, and scores
+		const enrichedData = await this.enrichProductsWithData(productsData || []);
+		return this.enrichWithRatings(enrichedData);
 	}
 
 	/**
@@ -90,28 +79,8 @@ export class RecommendationService {
 		// Build recommendation query
 		let query = this.client
 			.from('products')
-			.select(
-				`
-				*,
-				reviews (rating),
-				product_scores (
-					fit_score,
-					feature_score,
-					integration_score,
-					review_score,
-					overall_score,
-					score_breakdown
-				),
-				category:categories!category_id (key)
-			`
-			)
+			.select('*')
 			.eq('status', 'published');
-
-		// Filter by interested categories if available
-		if (interestedCategories.length > 0) {
-			// Note: Can't filter on joined table directly, would need to filter after fetch
-			// For now, we'll skip this filter or implement it post-fetch
-		}
 
 		// Exclude already bookmarked and purchased products
 		const excludedIds = [...bookmarkedProductIds, ...purchasedProductIds];
@@ -131,7 +100,9 @@ export class RecommendationService {
 			throw new Error(`Failed to fetch personalized recommendations: ${error.message}`);
 		}
 
-		return this.enrichWithRatings(data || []);
+		// Enrich with category, reviews, and scores
+		const enrichedData = await this.enrichProductsWithData(data || []);
+		return this.enrichWithRatings(enrichedData);
 	}
 
 	/**
@@ -188,21 +159,7 @@ export class RecommendationService {
 		// Fetch the actual products
 		const { data, error } = await this.client
 			.from('products')
-			.select(
-				`
-				*,
-				reviews (rating),
-				product_scores (
-					fit_score,
-					feature_score,
-					integration_score,
-					review_score,
-					overall_score,
-					score_breakdown
-				),
-				category:categories!category_id (key)
-			`
-			)
+			.select('*')
 			.in('id', sortedProductIds)
 			.eq('status', 'published');
 
@@ -215,7 +172,9 @@ export class RecommendationService {
 			.map((id) => data?.find((p) => p.id === id))
 			.filter((p) => p != null);
 
-		return this.enrichWithRatings(sortedData);
+		// Enrich with category, reviews, and scores
+		const enrichedData = await this.enrichProductsWithData(sortedData);
+		return this.enrichWithRatings(enrichedData);
 	}
 
 	/**
@@ -243,21 +202,7 @@ export class RecommendationService {
 
 		const { data, error } = await this.client
 			.from('products')
-			.select(
-				`
-				*,
-				reviews (rating),
-				product_scores (
-					fit_score,
-					feature_score,
-					integration_score,
-					review_score,
-					overall_score,
-					score_breakdown
-				),
-				category:categories!category_id (key)
-			`
-			)
+			.select('*')
 			.eq('category_id', sourceProduct.category_id)
 			.eq('status', 'published')
 			.neq('id', productId)
@@ -271,7 +216,9 @@ export class RecommendationService {
 			throw new Error(`Failed to fetch similar products: ${error.message}`);
 		}
 
-		return this.enrichWithRatings(data || []);
+		// Enrich with category, reviews, and scores
+		const enrichedData = await this.enrichProductsWithData(data || []);
+		return this.enrichWithRatings(enrichedData);
 	}
 
 	/**
@@ -340,21 +287,7 @@ export class RecommendationService {
 		// Fetch the actual products
 		const { data, error } = await this.client
 			.from('products')
-			.select(
-				`
-				*,
-				reviews (rating),
-				product_scores (
-					fit_score,
-					feature_score,
-					integration_score,
-					review_score,
-					overall_score,
-					score_breakdown
-				),
-				category:categories!category_id (key)
-			`
-			)
+			.select('*')
 			.in('id', trendingProductIds)
 			.eq('status', 'published');
 
@@ -367,7 +300,9 @@ export class RecommendationService {
 			.map((id) => data?.find((p) => p.id === id))
 			.filter((p) => p != null);
 
-		return this.enrichWithRatings(sortedData);
+		// Enrich with category, reviews, and scores
+		const enrichedData = await this.enrichProductsWithData(sortedData);
+		return this.enrichWithRatings(enrichedData);
 	}
 
 	/**
@@ -399,26 +334,13 @@ export class RecommendationService {
 				// Get the source product
 				const { data: sourceProduct } = await this.client
 					.from('products')
-					.select(
-						`
-						*,
-						reviews (rating),
-						product_scores (
-							fit_score,
-							feature_score,
-							integration_score,
-							review_score,
-							overall_score,
-							score_breakdown
-						),
-						category:categories!category_id (key)
-					`
-					)
+					.select('*')
 					.eq('id', productId)
 					.single();
 
 				if (sourceProduct) {
-					const enrichedSource = this.enrichWithRatings([sourceProduct])[0];
+					const enrichedSourceData = await this.enrichProductsWithData([sourceProduct]);
+					const enrichedSource = this.enrichWithRatings(enrichedSourceData)[0];
 					const allProducts = [enrichedSource, ...relatedProducts];
 
 					// Calculate bundle pricing
@@ -440,6 +362,44 @@ export class RecommendationService {
 		}
 
 		return bundleSuggestions;
+	}
+
+	/**
+	 * Helper method to enrich products with category, reviews, and scores data
+	 * @param products - Array of base products
+	 * @returns Array of products with enriched data
+	 */
+	private async enrichProductsWithData(products: any[]): Promise<any[]> {
+		return Promise.all(
+			products.map(async (product) => {
+				// Fetch category
+				const { data: categoryData } = await (this.client as any)
+					.from('categories')
+					.select('key')
+					.eq('id', product.category_id)
+					.maybeSingle();
+
+				// Fetch reviews
+				const { data: reviewsData } = await this.client
+					.from('reviews')
+					.select('rating')
+					.eq('product_id', product.id);
+
+				// Fetch scores
+				const { data: scoresData } = await (this.client as any)
+					.from('product_scores')
+					.select('*')
+					.eq('product_id', product.id)
+					.maybeSingle();
+
+				return {
+					...product,
+					category: categoryData,
+					reviews: reviewsData || [],
+					product_scores: scoresData ? [scoresData] : []
+				};
+			})
+		);
 	}
 
 	/**

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -115,9 +116,13 @@
 					<!-- Checkout Form -->
 					<form method="POST" use:enhance={() => {
 						isProcessing = true;
-						return async ({ update }) => {
-							await update();
+						return async ({ result }) => {
 							isProcessing = false;
+							if (result.type === 'redirect') {
+								goto(result.location);
+							} else if (result.type === 'failure') {
+								alert(result.data?.error || 'Failed to process checkout');
+							}
 						};
 					}} class="mt-6">
 						<button

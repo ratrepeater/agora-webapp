@@ -1,52 +1,64 @@
 import type { PageServerLoad } from './$types';
-import { productService } from '$lib/services/products';
 import { productFeatureService } from '$lib/services/product-features';
 import { ReviewService } from '$lib/services/reviews';
 import { recommendationService } from '$lib/services/recommendations';
 import { BookmarkService } from '$lib/services/bookmarks';
 import { CartService } from '$lib/services/cart';
-import { analyticsService } from '$lib/services/analytics';
 import { error } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	try {
 		const productId = params.id;
+		console.log('Loading product detail for ID:', productId);
 
-		// Fetch product details with scores
+		// Fetch product base data first (without joins that could cause multiple rows)
 		const { data: productData, error: productError } = await locals.supabase
 			.from('products')
-			.select(`
-				*,
-				categories(key),
-				reviews (rating),
-				product_scores (
-					fit_score,
-					feature_score,
-					integration_score,
-					review_score,
-					overall_score,
-					score_breakdown
-				)
-			`)
+			.select('*')
 			.eq('id', productId)
 			.single();
 
-		if (productError || !productData) {
+		if (productError) {
+			console.error('Product fetch error:', productError);
+			throw error(404, `Product not found: ${productError.message}`);
+		}
+
+		if (!productData) {
+			console.error('No product data returned for ID:', productId);
 			throw error(404, 'Product not found');
 		}
 
+		// Fetch category separately (cast to any to avoid type issues)
+		const { data: categoryData } = await (locals.supabase as any)
+			.from('categories')
+			.select('key')
+			.eq('id', productData.category_id)
+			.maybeSingle();
+
+		// Fetch reviews separately
+		const { data: reviewsData } = await locals.supabase
+			.from('reviews')
+			.select('rating')
+			.eq('product_id', productId);
+
+		// Fetch scores separately (cast to any to avoid type issues)
+		const { data: scoresData } = await (locals.supabase as any)
+			.from('product_scores')
+			.select('*')
+			.eq('product_id', productId)
+			.maybeSingle();
+
+		console.log('Product loaded successfully:', productData.name);
+
 		// Enrich product with ratings and scores
-		const productReviews = (productData as any).reviews || [];
+		const productReviews = reviewsData || [];
 		const calculatedAverageRating =
 			productReviews.length > 0
 				? productReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / productReviews.length
 				: 0;
 
-		const scores = Array.isArray((productData as any).product_scores)
-			? (productData as any).product_scores[0]
-			: (productData as any).product_scores;
-
-		const category = (productData as any).categories?.key || null;
+		const scores = scoresData || {};
+		const category = categoryData?.key || null;
 
 		const product = {
 			...productData,
@@ -113,20 +125,20 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			console.error('Error checking cart:', err);
 		}
 
-		// Fetch category-specific metrics
+		// Fetch category-specific metrics (cast to any to avoid type issues)
 		let categoryMetrics: any = { metricDefinitions: [], metrics: {} };
 		if (product.category) {
 			try {
 				// Get category ID
-				const { data: categoryData } = await locals.supabase
+				const { data: categoryData } = await (locals.supabase as any)
 					.from('categories')
 					.select('id')
 					.eq('key', product.category)
-					.single();
+					.maybeSingle();
 
 				if (categoryData) {
 					// Get metric definitions for this category
-					const { data: metricDefinitions } = await locals.supabase
+					const { data: metricDefinitions } = await (locals.supabase as any)
 						.from('metric_definitions')
 						.select('*')
 						.eq('category_id', categoryData.id)
@@ -136,7 +148,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 						const metricIds = metricDefinitions.map((m: any) => m.id);
 
 						// Get product metric values
-						const { data: productMetricValues } = await locals.supabase
+						const { data: productMetricValues } = await (locals.supabase as any)
 							.from('product_metric_values')
 							.select('*')
 							.eq('product_id', productId)

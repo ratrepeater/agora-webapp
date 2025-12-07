@@ -46,6 +46,33 @@
 	let isAnimating = $state(false);
 	let showAddedMessage = $state(false);
 
+	// Helper to format metric labels (replace underscores with spaces and capitalize)
+	function formatMetricLabel(label: string): string {
+		if (!label) return '';
+		return label
+			.replace(/_/g, ' ')
+			.split(' ')
+			.map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+			.join(' ');
+	}
+
+	// Get color class based on score - refined red/yellow/green gradient
+	function getScoreColor(score: number): string {
+		// Green range (80-100): deeper green as score increases
+		if (score >= 90) return 'text-green-600'; // Deep green: 90-100
+		if (score >= 80) return 'text-green-500'; // Standard green: 80-89
+		
+		// Yellow range (60-79): slight gradient toward lime (high) and orange (low)
+		if (score >= 75) return 'text-lime-500'; // Lime-ish: 75-79
+		if (score >= 70) return 'text-yellow-500'; // Standard yellow: 70-74
+		if (score >= 60) return 'text-orange-400'; // Orange-ish: 60-69
+		
+		// Red range (0-59): darker red as score decreases
+		if (score >= 50) return 'text-red-500'; // Standard red: 50-59
+		if (score >= 30) return 'text-red-600'; // Darker red: 30-49
+		return 'text-red-700'; // Very dark red: 0-29
+	}
+
 	// Derive whether to show quantity controls
 	const showQuantityControls = $derived(!showAddedMessage && cartQuantity > 0);
 
@@ -137,8 +164,9 @@
 					{#if 'overall_score' in product}
 						<div class="stat bg-base-300 rounded-lg p-4">
 							<div class="stat-title">Overall Score</div>
-							<div class="stat-value text-3xl">{product.overall_score || 0}</div>
-							<div class="stat-desc">out of 100</div>
+							<div class="stat-value text-3xl">
+								<span class="{getScoreColor(product.overall_score || 0)}">{product.overall_score || 0}</span><span class="text-lg text-gray-400 ml-1">/100</span>
+							</div>
 						</div>
 					{/if}
 				</div>
@@ -296,7 +324,9 @@
 					<div>
 						<div class="flex justify-between items-center mb-2">
 							<span class="font-semibold">Fit Score</span>
-							<span class="text-2xl font-bold">{product.fit_score || 0}</span>
+							<span class="text-2xl font-bold">
+								{product.fit_score || 0}<span class="text-sm text-gray-400 ml-1">/100</span>
+							</span>
 						</div>
 						<progress
 							class="progress progress-primary w-full"
@@ -311,7 +341,9 @@
 					<div>
 						<div class="flex justify-between items-center mb-2">
 							<span class="font-semibold">Feature Score</span>
-							<span class="text-2xl font-bold">{product.feature_score || 0}</span>
+							<span class="text-2xl font-bold">
+								{product.feature_score || 0}<span class="text-sm text-gray-400 ml-1">/100</span>
+							</span>
 						</div>
 						<progress
 							class="progress progress-secondary w-full"
@@ -324,7 +356,9 @@
 					<div>
 						<div class="flex justify-between items-center mb-2">
 							<span class="font-semibold">Integration Score</span>
-							<span class="text-2xl font-bold">{product.integration_score || 0}</span>
+							<span class="text-2xl font-bold">
+								{product.integration_score || 0}<span class="text-sm text-gray-400 ml-1">/100</span>
+							</span>
 						</div>
 						<progress
 							class="progress progress-accent w-full"
@@ -360,7 +394,7 @@
 					{#each categoryMetrics.metricDefinitions as metricDef}
 						{@const metricData = categoryMetrics.metrics[metricDef.code]}
 						<div class="stat bg-base-200 rounded-lg">
-							<div class="stat-title">{metricDef.label}</div>
+							<div class="stat-title">{formatMetricLabel(metricDef.label)}</div>
 							{#if metricData}
 								{#if metricDef.data_type === 'boolean'}
 									<div class="stat-value text-2xl">

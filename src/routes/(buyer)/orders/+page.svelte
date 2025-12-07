@@ -48,7 +48,7 @@
 				<h2 class="card-title justify-center">No Orders Yet</h2>
 				<p>You haven't placed any orders yet. Start shopping to see your orders here!</p>
 				<div class="card-actions justify-center mt-4">
-					<a href="/businesses" class="btn btn-primary">Browse Products</a>
+					<a href="/marketplace" class="btn btn-primary">Browse Products</a>
 				</div>
 			</div>
 		</div>
@@ -128,7 +128,7 @@
 											Download
 										</button>
 										<a
-											href="/businesses/{item.product_id}"
+											href="/products/{item.product_id}"
 											class="btn btn-ghost btn-sm"
 										>
 											View Product

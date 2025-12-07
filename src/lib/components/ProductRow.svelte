@@ -85,10 +85,10 @@
 
 <div class="product-row mb-8">
 	<!-- Row Header -->
-	<div class="flex items-center justify-between mb-4">
-		<h2 class="text-2xl font-bold">{title}</h2>
+	<div class="flex items-center justify-between mb-6">
+		<h2 class="text-3xl font-bold text-white">{title}</h2>
 		{#if showMoreLink}
-			<button class="btn btn-ghost btn-sm" onclick={handleShowMore}>
+			<button class="btn btn-sm bg-blue-600 hover:bg-blue-700 text-white border-0" onclick={handleShowMore}>
 				View All
 				<svg
 					xmlns="http://www.w3.org/2000/svg"

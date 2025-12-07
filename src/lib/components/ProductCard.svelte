@@ -46,6 +46,23 @@
 		return 'overall_score' in p;
 	}
 
+	// Get color class based on score - refined red/yellow/green gradient
+	function getScoreColor(score: number): string {
+		// Green range (80-100): deeper green as score increases
+		if (score >= 90) return 'text-green-600'; // Deep green: 90-100
+		if (score >= 80) return 'text-green-500'; // Standard green: 80-89
+		
+		// Yellow range (60-79): slight gradient toward lime (high) and orange (low)
+		if (score >= 75) return 'text-lime-500'; // Lime-ish: 75-79
+		if (score >= 70) return 'text-yellow-500'; // Standard yellow: 70-74
+		if (score >= 60) return 'text-orange-400'; // Orange-ish: 60-69
+		
+		// Red range (0-59): darker red as score decreases
+		if (score >= 50) return 'text-red-500'; // Standard red: 50-59
+		if (score >= 30) return 'text-red-600'; // Darker red: 30-49
+		return 'text-red-700'; // Very dark red: 0-29
+	}
+
 	function handleCompare(e: MouseEvent | KeyboardEvent) {
 		e.stopPropagation();
 		oncompare?.();
@@ -198,19 +215,27 @@
 			<div class="grid grid-cols-2 gap-2 mb-4">
 				<div class="stat bg-base-200 rounded-lg p-2">
 					<div class="stat-title text-xs">Overall</div>
-					<div class="stat-value text-lg">{product.overall_score || 0}</div>
+					<div class="stat-value text-lg">
+						<span class="{getScoreColor(product.overall_score || 0)}">{product.overall_score || 0}</span><span class="text-xs text-gray-400 ml-0.5">/100</span>
+					</div>
 				</div>
 				<div class="stat bg-base-200 rounded-lg p-2">
 					<div class="stat-title text-xs">Fit</div>
-					<div class="stat-value text-lg">{product.fit_score || 0}</div>
+					<div class="stat-value text-lg">
+						<span class="{getScoreColor(product.fit_score || 0)}">{product.fit_score || 0}</span><span class="text-xs text-gray-400 ml-0.5">/100</span>
+					</div>
 				</div>
 				<div class="stat bg-base-200 rounded-lg p-2">
 					<div class="stat-title text-xs">Features</div>
-					<div class="stat-value text-lg">{product.feature_score || 0}</div>
+					<div class="stat-value text-lg">
+						<span class="{getScoreColor(product.feature_score || 0)}">{product.feature_score || 0}</span><span class="text-xs text-gray-400 ml-0.5">/100</span>
+					</div>
 				</div>
 				<div class="stat bg-base-200 rounded-lg p-2">
 					<div class="stat-title text-xs">Integration</div>
-					<div class="stat-value text-lg">{product.integration_score || 0}</div>
+					<div class="stat-value text-lg">
+						<span class="{getScoreColor(product.integration_score || 0)}">{product.integration_score || 0}</span><span class="text-xs text-gray-400 ml-0.5">/100</span>
+					</div>
 				</div>
 			</div>
 		{/if}
