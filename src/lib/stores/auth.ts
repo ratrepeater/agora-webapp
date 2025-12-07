@@ -1,3 +1,7 @@
+// authentication store
+// manages user session, authentication state, and user role
+// used for client-side auth state management across components
+
 import { writable } from 'svelte/store';
 import type { Session, User } from '@supabase/supabase-js';
 import type { UserRole } from '$lib/helpers/types';
@@ -19,6 +23,8 @@ function createAuthStore() {
 
 	return {
 		subscribe,
+		
+		// update session and user role
 		setSession: (session: Session | null, userRole: UserRole | null) => {
 			update((state) => ({
 				...state,
@@ -28,9 +34,13 @@ function createAuthStore() {
 				loading: false
 			}));
 		},
+		
+		// set loading state
 		setLoading: (loading: boolean) => {
 			update((state) => ({ ...state, loading }));
 		},
+		
+		// clear all auth state (on sign out)
 		clear: () => {
 			set({
 				session: null,

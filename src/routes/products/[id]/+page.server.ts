@@ -1,7 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { productFeatureService } from '$lib/services/product-features';
 import { ReviewService } from '$lib/services/reviews';
-import { recommendationService } from '$lib/services/recommendations';
 import { BookmarkService } from '$lib/services/bookmarks';
 import { CartService } from '$lib/services/cart';
 import { error } from '@sveltejs/kit';
@@ -81,7 +80,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		// Fetch related data with error handling for each
 		let features: any[] = [];
 		let reviews: any[] = [];
-		let similarProducts: any[] = [];
 		let isBookmarked = false;
 		let isInCart = false;
 
@@ -97,12 +95,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		} catch (err) {
 			console.error('Error loading reviews:', err);
 			console.error('Full error details:', JSON.stringify(err, null, 2));
-		}
-
-		try {
-			similarProducts = await recommendationService.getSimilarProducts(productId, 6);
-		} catch (err) {
-			console.error('Error loading similar products:', err);
 		}
 
 		try {
@@ -196,7 +188,6 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			product,
 			features,
 			reviews,
-			similarProducts,
 			categoryMetrics,
 			averageRating: product.average_rating,
 			isBookmarked,

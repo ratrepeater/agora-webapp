@@ -1,3 +1,7 @@
+// product comparison store
+// manages products selected for comparison, organized by category
+// persists state to localstorage and enforces a 3-product limit per category
+
 import { writable } from 'svelte/store';
 import type { ProductWithRating, ProductCategory } from '$lib/helpers/types';
 
@@ -10,7 +14,7 @@ interface ComparisonState {
 }
 
 function createComparisonStore() {
-	// Initialize from localStorage if available
+	// initialize from localstorage if available
 	const initialState = typeof window !== 'undefined' 
 		? loadFromLocalStorage() 
 		: { productsByCategory: { hr: [], legal: [], marketing: [], devtools: [] }, activeCategory: null };
@@ -20,11 +24,9 @@ function createComparisonStore() {
 	return {
 		subscribe,
 		
-		/**
-		 * Add a product to the comparison list for its category
-		 * Enforces 3-product maximum per category
-		 * Returns 'added' if successful, 'exists' if already in list, 'full' if category is at capacity
-		 */
+		// add a product to the comparison list for its category
+		// enforces 3-product maximum per category
+		// returns 'added' if successful, 'exists' if already in list, 'full' if category is at capacity
 		add: (product: ProductWithRating): 'added' | 'exists' | 'full' | 'no_category' => {
 			if (!product.category) {
 				return 'no_category';
@@ -36,13 +38,13 @@ function createComparisonStore() {
 				const category = product.category as ProductCategory;
 				const categoryProducts = state.productsByCategory[category] || [];
 				
-				// Check if product already exists in this category
+				// check if product already exists in this category
 				if (categoryProducts.some(p => p.id === product.id)) {
 					result = 'exists';
 					return state;
 				}
 				
-				// Check if we've reached the maximum for this category
+				// check if we've reached the maximum for this category
 				if (categoryProducts.length >= MAX_COMPARISON_PRODUCTS) {
 					result = 'full';
 					return state;
@@ -54,7 +56,7 @@ function createComparisonStore() {
 						...state.productsByCategory,
 						[category]: newCategoryProducts
 					},
-					activeCategory: category // Always switch to the product's category
+					activeCategory: category // always switch to the product's category
 				};
 				saveToLocalStorage(newState);
 				return newState;
@@ -63,14 +65,12 @@ function createComparisonStore() {
 			return result;
 		},
 		
-		/**
-		 * Remove a product from the comparison list
-		 */
+		// remove a product from the comparison list
 		remove: (productId: string): void => {
 			update((state) => {
 				const newProductsByCategory = { ...state.productsByCategory };
 				
-				// Find which category the product belongs to and remove it
+				// find which category the product belongs to and remove it
 				let removedFromCategory: ProductCategory | null = null;
 				for (const category of Object.keys(newProductsByCategory) as ProductCategory[]) {
 					const productIndex = newProductsByCategory[category].findIndex(p => p.id === productId);
@@ -79,24 +79,24 @@ function createComparisonStore() {
 						newProductsByCategory[category] = newProductsByCategory[category].filter(
 							p => p.id !== productId
 						);
-						break; // Product found and removed, exit loop
+						break; // product found and removed, exit loop
 					}
 				}
 				
-				// Determine new active category
+				// determine new active category
 				let newActiveCategory = state.activeCategory;
 				
-				// If we removed from the active category and it's now empty
+				// if we removed from the active category and it's now empty
 				if (removedFromCategory === state.activeCategory && newProductsByCategory[removedFromCategory].length === 0) {
-					// Find first non-empty category
+					// find first non-empty category
 					const firstNonEmptyCategory = (['hr', 'legal', 'marketing', 'devtools'] as ProductCategory[]).find(
 						cat => newProductsByCategory[cat].length > 0
 					);
 					newActiveCategory = firstNonEmptyCategory || null;
 				}
-				// If we removed from a different category and active category is empty
+				// if we removed from a different category and active category is empty
 				else if (state.activeCategory && newProductsByCategory[state.activeCategory].length === 0) {
-					// Find first non-empty category
+					// find first non-empty category
 					const firstNonEmptyCategory = (['hr', 'legal', 'marketing', 'devtools'] as ProductCategory[]).find(
 						cat => newProductsByCategory[cat].length > 0
 					);
@@ -112,9 +112,7 @@ function createComparisonStore() {
 			});
 		},
 		
-		/**
-		 * Clear all products from a specific category
-		 */
+		// clear all products from a specific category
 		clearCategory: (category: ProductCategory): void => {
 			update((state) => {
 				const newState = {
@@ -129,9 +127,7 @@ function createComparisonStore() {
 			});
 		},
 		
-		/**
-		 * Clear all products from all categories
-		 */
+		// clear all products from all categories
 		clear: (): void => {
 			const emptyState = {
 				productsByCategory: { hr: [], legal: [], marketing: [], devtools: [] },
@@ -141,9 +137,7 @@ function createComparisonStore() {
 			saveToLocalStorage(emptyState);
 		},
 		
-		/**
-		 * Set the active category
-		 */
+		// set the active category
 		setActiveCategory: (category: ProductCategory | null): void => {
 			update((state) => {
 				const newState = { ...state, activeCategory: category };
@@ -152,9 +146,7 @@ function createComparisonStore() {
 			});
 		},
 		
-		/**
-		 * Check if a product is in the comparison list
-		 */
+		// check if a product is in the comparison list
 		has: (productId: string): boolean => {
 			let result = false;
 			subscribe((state) => {
@@ -168,9 +160,7 @@ function createComparisonStore() {
 			return result;
 		},
 		
-		/**
-		 * Get the current number of products in a category
-		 */
+		// get the current number of products in a category
 		getCategoryCount: (category: ProductCategory): number => {
 			let count = 0;
 			subscribe((state) => {
@@ -179,9 +169,7 @@ function createComparisonStore() {
 			return count;
 		},
 		
-		/**
-		 * Get total count across all categories
-		 */
+		// get total count across all categories
 		getTotalCount: (): number => {
 			let count = 0;
 			subscribe((state) => {
@@ -195,15 +183,13 @@ function createComparisonStore() {
 	};
 }
 
-/**
- * Load comparison state from localStorage
- */
+// load comparison state from localstorage
 function loadFromLocalStorage(): ComparisonState {
 	try {
 		const stored = localStorage.getItem(COMPARISON_STORAGE_KEY);
 		if (stored) {
 			const parsed = JSON.parse(stored);
-			// Validate structure
+			// validate structure
 			if (parsed && typeof parsed === 'object' && parsed.productsByCategory) {
 				return parsed;
 			}
@@ -217,9 +203,7 @@ function loadFromLocalStorage(): ComparisonState {
 	};
 }
 
-/**
- * Save comparison state to localStorage
- */
+// save comparison state to localstorage
 function saveToLocalStorage(state: ComparisonState): void {
 	try {
 		localStorage.setItem(COMPARISON_STORAGE_KEY, JSON.stringify(state));

@@ -2,10 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import ProductDetailView from '$lib/components/ProductDetailView.svelte';
-	import ProductRow from '$lib/components/ProductRow.svelte';
 	import ComparisonBar from '$lib/components/ComparisonBar.svelte';
 	import type { PageData } from './$types';
-	import type { ProductWithRating } from '$lib/helpers/types';
 	import { comparisonStore } from '$lib/stores/comparison';
 
 	let { data }: { data: PageData } = $props();
@@ -160,9 +158,6 @@
 		}
 	}
 
-	function handleSimilarProductClick(product: ProductWithRating) {
-		goto(`/products/${product.id}`);
-	}
 </script>
 
 <div class="container mx-auto px-4 py-8">
@@ -181,17 +176,6 @@
 			onaddtocart={handleAddToCart}
 			onupdatecartquantity={handleUpdateCartQuantity}
 		/>
-
-		<!-- Similar Products Section -->
-		{#if data.similarProducts && data.similarProducts.length > 0}
-			<div class="mt-16">
-				<ProductRow
-					title="Similar Products"
-					products={data.similarProducts}
-					onproductclick={handleSimilarProductClick}
-				/>
-			</div>
-		{/if}
 	{:else}
 		<div class="text-center py-16">
 			<h2 class="text-2xl font-bold mb-4">Product not found</h2>

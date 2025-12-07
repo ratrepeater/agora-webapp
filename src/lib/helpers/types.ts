@@ -1,9 +1,10 @@
-import type { Tables } from './database.types';
+// type definitions for the application
+// includes database table types, extended types with relations, and business logic types
 
-// Database table types from generated types
+import type { Tables } from './database.types';
 export type Product = Tables<'products'>;
 export type Profile = Tables<'profiles'>;
-// Review type with correct column names (database has title and body, not review_text)
+// review type with correct column names (database has title and body, not review_text)
 export interface Review {
 	id: string;
 	product_id: string;
@@ -18,7 +19,7 @@ export type CartItem = Tables<'cart_items'>;
 export type Order = Tables<'orders'>;
 export type OrderItem = Tables<'order_items'>;
 
-// Manual type definitions for new tables (until types are regenerated)
+// manual type definitions for new tables (until types are regenerated)
 export interface ProductScore {
 	id: string;
 	product_id: string;
@@ -152,20 +153,20 @@ export interface CompetitorRelationship {
 	updated_at: string;
 }
 
-// Enum types (using database keys - lowercase)
+// enum types (using database keys - lowercase)
 export type ProductCategory = 'hr' | 'legal' | 'marketing' | 'devtools';
 export type UserRole = 'buyer' | 'seller';
 export type CloudClientType = 'cloud' | 'client' | 'hybrid';
 export type ImplementationStatus = 'not_started' | 'in_progress' | 'completed' | 'paused';
 export type QuoteStatus = 'pending' | 'sent' | 'accepted' | 'rejected' | 'expired';
 
-// Extended product type with ratings (Product already has price_cents from database)
+// extended product type with ratings (product already has price_cents from database)
 export interface ProductWithRating extends Product {
 	average_rating: number;
 	review_count: number;
 }
 
-// Score breakdown structure
+// score breakdown structure
 export interface ScoreBreakdown {
 	fit: {
 		score: number;
@@ -204,7 +205,7 @@ export interface ScoreBreakdown {
 	};
 }
 
-// Extended product type with scores
+// extended product type with scores
 export interface ProductWithScores extends ProductWithRating {
 	fit_score: number; // 0-100
 	feature_score: number; // 0-100
@@ -215,12 +216,12 @@ export interface ProductWithScores extends ProductWithRating {
 	features?: ProductFeature[];
 }
 
-// Cart item with product details
+// cart item with product details
 export interface CartItemWithProduct extends CartItem {
 	product: ProductWithRating;
 }
 
-// Order with items
+// order with items
 export interface OrderWithItems extends Order {
 	items: OrderItemWithProduct[];
 }
@@ -229,24 +230,24 @@ export interface OrderItemWithProduct extends OrderItem {
 	product: ProductWithRating;
 }
 
-// Bookmark with product
+// bookmark with product
 export interface BookmarkWithProduct extends Bookmark {
 	product: ProductWithRating;
 }
 
-// Review with buyer info
+// review with buyer info
 export interface ReviewWithBuyer extends Review {
 	buyer: {
 		full_name: string | null;
 	};
 }
 
-// Review with product info
+// review with product info
 export interface ReviewWithProduct extends Review {
 	product: ProductWithRating;
 }
 
-// Analytics types
+// analytics types
 export interface TimeSeriesData {
 	date: string;
 	value: number;
@@ -371,7 +372,7 @@ export interface SellerDashboard {
 	category_rankings: CategoryRanking[];
 }
 
-// Competitor analysis types
+// competitor analysis types
 export interface PriceComparison {
 	your_price: number;
 	competitor_average: number;
@@ -458,7 +459,7 @@ export interface CompetitorAnalysis {
 	is_premium_unlocked: boolean;
 }
 
-// Buyer dashboard types
+// buyer dashboard types
 export interface CategorySpending {
 	category: string;
 	amount: number;
@@ -536,7 +537,7 @@ export interface BuyerDashboard {
 	implementation_timeline: ImplementationTimeline[];
 }
 
-// Quote types
+// quote types
 export interface QuoteRequest {
 	product_id: string;
 	buyer_id: string;
@@ -546,7 +547,7 @@ export interface QuoteRequest {
 	additional_notes?: string;
 }
 
-// Bundle types
+// bundle types
 export interface ProductBundle {
 	id: string;
 	name: string;
@@ -557,7 +558,7 @@ export interface ProductBundle {
 	discount_percentage: number;
 }
 
-// Filter types
+// filter types
 export interface ProductFilters {
 	category?: ProductCategory;
 	minPrice?: number;
@@ -567,7 +568,7 @@ export interface ProductFilters {
 	new?: boolean;
 }
 
-// Legacy type for existing components (to be removed)
+// legacy type for existing components (to be removed)
 export type ListingInfo = {
 	uid: string;
 	created_at: string;

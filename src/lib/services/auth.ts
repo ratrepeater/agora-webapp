@@ -1,3 +1,7 @@
+// authentication service
+// handles user sign up, sign in, oauth, and role management
+// wraps supabase auth with application-specific logic
+
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Provider } from '@supabase/supabase-js';
 import type { UserRole } from '$lib/helpers/types';
@@ -16,12 +20,10 @@ export interface SignInData {
 export class AuthService {
 	constructor(private supabase: SupabaseClient) {}
 
-	/**
-	 * Sign up a new user (defaults to buyer role)
-	 * Profile is created automatically by database trigger
-	 */
+	// sign up a new user (defaults to buyer role)
+	// profile is created automatically by database trigger
 	async signUp(data: SignUpData) {
-		// Create the auth user - profile will be created by trigger
+		// create the auth user - profile will be created by trigger
 		const { data: authData, error: authError } = await this.supabase.auth.signUp({
 			email: data.email,
 			password: data.password,
@@ -40,14 +42,12 @@ export class AuthService {
 			throw new Error('Failed to create user');
 		}
 
-		// Profile is created automatically by the database trigger
-		// No need to manually insert into profiles table
+		// profile is created automatically by the database trigger
+		// no need to manually insert into profiles table
 		return authData;
 	}
 
-	/**
-	 * Update user's seller role
-	 */
+	// update user's seller role
 	async enableSellerRole(userId: string) {
 		const { error } = await this.supabase
 			.from('profiles')
@@ -59,9 +59,7 @@ export class AuthService {
 		}
 	}
 
-	/**
-	 * Get user profile
-	 */
+	// get user profile
 	async getProfile(userId: string) {
 		const { data, error } = await this.supabase
 			.from('profiles')
@@ -76,9 +74,7 @@ export class AuthService {
 		return data;
 	}
 
-	/**
-	 * Sign in an existing user with email/password
-	 */
+	// sign in an existing user with email/password
 	async signIn(data: SignInData) {
 		const { data: authData, error } = await this.supabase.auth.signInWithPassword({
 			email: data.email,
@@ -92,9 +88,7 @@ export class AuthService {
 		return authData;
 	}
 
-	/**
-	 * Sign in with OAuth provider (Google, GitHub, etc.)
-	 */
+	// sign in with oauth provider (google, github, etc)
 	async signInWithOAuth(provider: Provider, redirectTo?: string) {
 		const { data, error } = await this.supabase.auth.signInWithOAuth({
 			provider,
@@ -110,9 +104,7 @@ export class AuthService {
 		return data;
 	}
 
-	/**
-	 * Sign out the current user
-	 */
+	// sign out the current user
 	async signOut() {
 		const { error } = await this.supabase.auth.signOut();
 
@@ -121,9 +113,7 @@ export class AuthService {
 		}
 	}
 
-	/**
-	 * Get the current session
-	 */
+	// get the current session
 	async getSession() {
 		const { data, error } = await this.supabase.auth.getSession();
 
@@ -134,9 +124,7 @@ export class AuthService {
 		return data.session;
 	}
 
-	/**
-	 * Get the user's role from the profiles table
-	 */
+	// get the user's role from the profiles table
 	async getUserRole(userId: string): Promise<UserRole | null> {
 		const { data, error } = await this.supabase
 			.from('profiles')
@@ -149,15 +137,13 @@ export class AuthService {
 			return null;
 		}
 
-		// Return primary role (seller takes precedence if both are true)
+		// return primary role (seller takes precedence if both are true)
 		if (data?.role_seller) return 'seller';
 		if (data?.role_buyer) return 'buyer';
 		return null;
 	}
 
-	/**
-	 * Check if the current user has a specific role
-	 */
+	// check if the current user has a specific role
 	async hasRole(role: UserRole): Promise<boolean> {
 		const session = await this.getSession();
 		if (!session) return false;
@@ -166,9 +152,7 @@ export class AuthService {
 		return userRole === role;
 	}
 
-	/**
-	 * Listen to auth state changes
-	 */
+	// listen to auth state changes
 	onAuthStateChange(callback: (session: any) => void) {
 		return this.supabase.auth.onAuthStateChange((_event, session) => {
 			callback(session);

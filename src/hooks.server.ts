@@ -1,15 +1,16 @@
+// server-side request handler that runs on every request
+// sets up supabase client, session, and user role in event.locals for use throughout the app
+
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
 import { SUPABASE_URL, SUPABASE_KEY } from '$env/static/private';
 import type { Handle } from '@sveltejs/kit';
 import type { Database } from '$lib/helpers/database.types';
 
 export const handle: Handle = async ({ event, resolve }) => {
-	// Create a Supabase client with cookie handling
+	// initialize supabase client with cookie-based session management
 	event.locals.supabase = createSupabaseServerClient<Database>(SUPABASE_URL, SUPABASE_KEY, {
 		cookies: {
-			getAll: () => {
-				return event.cookies.getAll();
-			},
+			getAll: () => event.cookies.getAll(),
 			setAll: (cookiesToSet) => {
 				cookiesToSet.forEach(({ name, value, options }) => {
 					event.cookies.set(name, value, { ...options, path: '/' });
@@ -18,14 +19,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	});
 
-	// Get the session from the request
+	// retrieve current session
 	const {
 		data: { session }
 	} = await event.locals.supabase.auth.getSession();
 
 	event.locals.session = session;
 
-	// If there's a session, get the user's role from the profiles table
+	// fetch user role from profiles table if authenticated
 	if (session) {
 		const { data: profile } = await event.locals.supabase
 			.from('profiles')
@@ -33,7 +34,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 			.eq('id', session.user.id)
 			.single();
 
-		// Determine primary role (seller takes precedence if both are true)
+		// seller role takes precedence when user has both roles
 		if (profile?.role_seller) {
 			event.locals.userRole = 'seller';
 		} else if (profile?.role_buyer) {
@@ -46,6 +47,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	return resolve(event, {
+		// allow supabase headers to pass through
 		filterSerializedResponseHeaders(name) {
 			return name === 'content-range' || name === 'x-supabase-api-version';
 		}
