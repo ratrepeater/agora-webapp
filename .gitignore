@@ -24,4 +24,3 @@ vite.config.ts.timestamp-*
 
 .npmrc
 package-lock.json
-README.md
