@@ -178,6 +178,8 @@ brew install supabase/tap/supabase  # macOS
 2. Wait for the project to finish provisioning
 3. Go to Project Settings > API
 4. Copy your project URL and anon key
+5. PUBLIC_SUPABASE_URL=https://sbfpxgsgabkgbutzhgwm.supabase.co
+6. PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNiZnB4Z3NnYWJrZ2J1dHpoZ3dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxODg0ODMsImV4cCI6MjA3Nzc2NDQ4M30.45pNssaz8rTmgOE-QL_ks0RMEEych7OzaFORdJHcEQA
 
 **Option B: Local Supabase (Advanced)**
 ```bash
