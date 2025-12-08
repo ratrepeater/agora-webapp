@@ -3,8 +3,6 @@
 A modern B2B SaaS marketplace built with SvelteKit 5, Supabase, and TypeScript. Agora enables startups to discover, compare, and purchase business services across multiple categories.
 
 ## Features
-
-### For Buyers
 - **Product Discovery**: Browse products by category (HR, Legal, Marketing, DevTools)
 - **Advanced Search**: Full-text search with filters (price, rating, category)
 - **Product Comparison**: Compare up to 3 products side-by-side with category-specific metrics
@@ -13,12 +11,6 @@ A modern B2B SaaS marketplace built with SvelteKit 5, Supabase, and TypeScript. 
 - **Bookmarks**: Save products for later review
 - **Dashboard**: Track spending, usage analytics, and purchased products
 - **Order Management**: View order history and download invoices
-
-### For Sellers
-- **Product Management**: Create and manage product listings with rich metadata
-- **Analytics Dashboard**: Track views, conversions, and revenue metrics
-- **Competitor Analysis**: Monitor competitor products and pricing
-- **Review Management**: View and respond to customer reviews
 
 ### Product Comparison System
 - **Category-Specific Metrics**: Each category has 16 unique metrics for detailed comparison
@@ -264,12 +256,6 @@ pnpm dev
 2. Sign up with email/password
 3. Verify email (check Supabase Auth logs)
 4. Profile is automatically created
-
-**Create a Seller Account:**
-1. Sign up as a buyer first
-2. Navigate to `/become-seller`
-3. Fill out seller information
-4. Account is upgraded to seller
 
 ### Environment Variables Reference
 
