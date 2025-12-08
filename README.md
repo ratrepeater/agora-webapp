@@ -198,26 +198,6 @@ The app will be available at `http://localhost:5173`
 2. Sign in with email/password (email: ryanliu847@gmail.com, password: testing)
 
 
-```
-
-### Database Schema Setup
-
-The project includes migrations in `supabase/migrations/`:
-- `20251205023859_initial_schema.sql` - Core tables and RLS policies
-- `20251205230000_add_competitor_analysis_tables.sql` - Competitor features
-- `20251206000000_performance_optimizations.sql` - Indexes and optimizations
-
-**To apply migrations:**
-```bash
-# Via Supabase CLI
-supabase db push
-
-# Or manually in Supabase Dashboard
-# 1. Go to SQL Editor
-# 2. Copy migration file contents
-# 3. Run the SQL
-```
-
 ### Troubleshooting
 
 **Issue: "Failed to fetch" errors**
