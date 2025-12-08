@@ -151,7 +151,14 @@ Products scored on 4 dimensions:
 
 ### Initial Setup
 
-#### 1. Clone the Repository
+
+### Prerequisites
+- Node.js 18+ (20+ recommended)
+- npm or pnpm
+
+### Installation Steps
+
+#### 1. Clone Repository
 ```bash
 git clone <repository-url>
 cd agora-webapp
@@ -164,77 +171,28 @@ npm install
 pnpm install
 ```
 
-#### 3. Install Supabase CLI
-```bash
-npm install -g supabase
-# or
-brew install supabase/tap/supabase  # macOS
-```
+#### 3. Configure Environment Variables
 
-#### 4. Set Up Supabase Project
-
-Note: Setting up Supabase might be difficult. We set up our own Supabase account, and the following steps are outlined to help you set up your own Supabase account and seed it with the exact same tables and data that we used in our site. 
-
-**Option A: Use Existing Supabase Project (Recommended)**
-1. Go to [supabase.com](https://supabase.com) and create a new project
-2. Wait for the project to finish provisioning
-3. Go to Project Settings > API
-4. Copy your project URL and anon key
-5. PUBLIC_SUPABASE_URL=https://sbfpxgsgabkgbutzhgwm.supabase.co
-6. PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNiZnB4Z3NnYWJrZ2J1dHpoZ3dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxODg0ODMsImV4cCI6MjA3Nzc2NDQ4M30.45pNssaz8rTmgOE-QL_ks0RMEEych7OzaFORdJHcEQA
-
-**Option B: Local Supabase (Advanced)**
-```bash
-supabase init
-supabase start
-```
-
-#### 5. Configure Environment Variables
-Create a `.env` file in the root directory:
+Create a `.env` file in the project root with the following content:
 
 ```bash
-# Supabase Configuration
-PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-
-# Optional: For local development
-# PUBLIC_SUPABASE_URL=http://localhost:54321
-# PUBLIC_SUPABASE_ANON_KEY=your-local-anon-key
+# supabase configuration
+SUPABASE_URL=https://sbfpxgsgabkgbutzhgwm.supabase.co
+SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNiZnB4Z3NnYWJrZ2J1dHpoZ3dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxODg0ODMsImV4cCI6MjA3Nzc2NDQ4M30.45pNssaz8rTmgOE-QL_ks0RMEEych7OzaFORdJHcEQA
+PUBLIC_SUPABASE_URL=https://sbfpxgsgabkgbutzhgwm.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNiZnB4Z3NnYWJrZ2J1dHpoZ3dtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxODg0ODMsImV4cCI6MjA3Nzc2NDQ4M30.45pNssaz8rTmgOE-QL_ks0RMEEych7OzaFORdJHcEQA
 ```
 
-To get your credentials:
-1. Go to your Supabase project dashboard
-2. Navigate to **Settings** > **API**
-3. Copy the **Project URL** and **anon/public** key
+**Note:** These are public credentials that connect you to a shared demo Supabase instance. The database is already set up with sample data. You can create your own account and test all features safely.
 
-#### 6. Run Database Migrations
-```bash
-# Link to your Supabase project
-supabase link --project-ref your-project-ref
-
-# Run all migrations
-supabase db push
-
-# Or apply migrations manually via Supabase dashboard
-# Copy contents of supabase/migrations/*.sql and run in SQL Editor
-```
-
-#### 7. Seed the Database (Optional)
-Run the score calculation script to populate product scores:
-```bash
-node scripts/calculate-product-scores.js
-```
-
-#### 8. Start Development Server
+#### 4. Start Development Server
 ```bash
 npm run dev
-# or
-pnpm dev
-
-# Server will start at http://localhost:5173
 ```
 
-#### 10. Sign in to Test account
+The app will be available at `http://localhost:5173`
+
+#### 5. Sign in to Test account
 
 1. Navigate to sign in
 2. Sign in with email/password (email: ryanliu847@gmail.com, password: testing)
