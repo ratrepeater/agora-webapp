@@ -173,6 +173,8 @@ brew install supabase/tap/supabase  # macOS
 
 #### 4. Set Up Supabase Project
 
+Note: Setting up Supabase might be difficult. We set up our own Supabase account, and the following steps are outlined to help you set up your own Supabase account and seed it with the exact same tables and data that we used in our site. 
+
 **Option A: Use Existing Supabase Project (Recommended)**
 1. Go to [supabase.com](https://supabase.com) and create a new project
 2. Wait for the project to finish provisioning
@@ -223,26 +225,7 @@ Run the score calculation script to populate product scores:
 node scripts/calculate-product-scores.js
 ```
 
-#### 8. Configure Authentication
-
-**Enable Email/Password Auth:**
-1. Go to **Authentication** > **Providers**
-2. Enable **Email** provider
-3. Configure email templates (optional)
-
-**Enable OAuth (Optional):**
-1. Go to **Authentication** > **Providers**
-2. Enable desired providers (Google, GitHub, etc.)
-3. Add OAuth credentials from provider
-4. Set redirect URL: `https://your-domain.com/auth/callback`
-
-**Set Up Row Level Security (RLS):**
-The migrations include RLS policies, but verify:
-1. Go to **Authentication** > **Policies**
-2. Ensure policies are enabled for all tables
-3. Test with different user roles
-
-#### 9. Start Development Server
+#### 8. Start Development Server
 ```bash
 npm run dev
 # or
@@ -251,27 +234,12 @@ pnpm dev
 # Server will start at http://localhost:5173
 ```
 
-#### 10. Create Test Users
+#### 10. Sign in to Test account
 
-**Create a Buyer Account:**
-1. Navigate to `http://localhost:5173/auth/signup`
-2. Sign up with email/password
-3. Verify email (check Supabase Auth logs)
-4. Profile is automatically created
+1. Navigate to sign in
+2. Sign in with email/password (email: ryanliu847@gmail.com, password: testing)
 
-### Environment Variables Reference
 
-```bash
-# Required
-PUBLIC_SUPABASE_URL=          # Your Supabase project URL
-PUBLIC_SUPABASE_ANON_KEY=     # Your Supabase anon/public key
-
-# Optional - Development
-NODE_ENV=development          # Environment mode
-VITE_DEV_SERVER_URL=          # Custom dev server URL
-
-# Optional - Production
-PUBLIC_SITE_URL=              # Your production domain
 ```
 
 ### Database Schema Setup
