@@ -142,6 +142,12 @@
 					<a href="/auth/signin" class="link link-primary">Sign in</a>
 				</p>
 			</div>
+
+			{#if form?.success}
+				<div class="alert alert-success mb-4">
+					<span>{form?.message}</span>
+				</div>
+			{/if}
 		</div>
 	</div>
 </div>

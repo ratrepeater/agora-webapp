@@ -54,13 +54,15 @@ export const actions = {
 			return fail(400, { error: error.message });
 		}
 
-		// If no session was created, the email might already be registered
+		/*// If no session was created, the email might already be registered
 		if (!data.session && data.user) {
 			return fail(400, { error: 'Email is already registered. Use a different email.' });
-		}
+		}*/
 
 		// Profile will be created by database trigger
-		// Redirect to home page
-		throw redirect(303, '/');
+		return {
+			success: true,
+			message: "Profile created. Please check your email for a confirmation link."
+		};
 	}
 } satisfies Actions;
