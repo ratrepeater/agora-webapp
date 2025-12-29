@@ -1,4 +1,4 @@
-import { supabase } from '$lib/helpers/supabase.server';
+import { supabase } from '$lib/helpers/supabase.client';
 import type { ProductDownload } from '$lib/helpers/types';
 
 /**
