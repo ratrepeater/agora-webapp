@@ -6,22 +6,22 @@ import type { Database } from '$lib/helpers/database.types';
 import type { UserRole } from '$lib/helpers/types';
 
 declare global {
-	namespace App {
-		// server-side locals available in hooks, load functions, and endpoints
-		// populated by hooks.server.ts on every request
-		interface Locals {
-			supabase: SupabaseClient<Database>;
-			session: Session | null;
-			userRole: UserRole | null;
-		}
+    namespace App {
+        // server-side locals available in hooks, load functions, and endpoints
+        // populated by hooks.server.ts on every request
+        interface Locals {
+            supabase: SupabaseClient<Database>;
+            session: Session | null;
+            userRole: UserRole | null;
+        }
 
-		// data passed from server load functions to pages
-		// contains authentication state for client-side use
-		interface PageData {
-			session: Session | null;
-			userRole: UserRole | null;
-		}
-	}
+        // data passed from server load functions to pages
+        // contains authentication state for client-side use
+        interface PageData {
+            session: Session | null;
+            userRole: UserRole | null;
+        }
+    }
 }
 
 export {};
