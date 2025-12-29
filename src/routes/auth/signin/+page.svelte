@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';
-	import { createBrowserClient } from '$lib/helpers/supabase';
+	import { supabase } from '$lib/helpers/supabase.client';
 	import { AuthService } from '$lib/services/auth';
 	import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 	import type { ActionData } from './$types';
 
 	let { form }: { form: ActionData } = $props();
-
-	const supabase = createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 	const authService = new AuthService(supabase);
 
 	let error = $derived(form?.error || '');
@@ -72,6 +70,10 @@
 						class="input input-bordered"
 						required
 					/>
+				</div>
+
+				<div class="form-control mb-6">
+					<a class="link link-primary" href="/auth/forgot-password">Forgot password?</a>
 				</div>
 
 				<div class="form-control">
