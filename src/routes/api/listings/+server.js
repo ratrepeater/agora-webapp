@@ -1,4 +1,4 @@
-import { supabase } from '$lib/helpers/supabase';
+import { supabase } from '$lib/helpers/supabase.server';
 
 export async function GET() {
     let { data: listings, error } = await supabase
