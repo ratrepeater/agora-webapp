@@ -442,6 +442,7 @@
 				</svg>
 				<span>Product created successfully!</span>
 			</div>
+			<meta http-equiv="refresh" content="0; url=/seller/products" />
 		{/if}
 	</form>
 </div>

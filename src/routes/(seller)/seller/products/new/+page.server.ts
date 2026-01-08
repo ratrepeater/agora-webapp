@@ -260,7 +260,10 @@ export const actions: Actions = {
 			}
 
 			// Redirect to products list on success
-			throw redirect(303, '/seller/products');
+			return {
+				success: true,
+				redirect: '/seller/products',
+			}
 		} catch (error) {
 			// If it's a redirect, re-throw it
 			if (error instanceof Response && error.status === 303) {
