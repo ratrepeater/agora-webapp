@@ -13,6 +13,9 @@
 
     let { children, user = null, userRole = null, cartItemCount = 0 }: Props = $props();
 
+    // Let sellers toggle between user roles
+    let activeRole: UserRole = $state(userRole || 'buyer');
+
     // Handle sign out
     async function handleSignOut() {
         try {
@@ -159,6 +162,17 @@
             <!-- Desktop navigation links -->
             <div class="hidden lg:inline-flex justify-end gap-2 items-center">
                 {#if userRole === 'seller'}
+                    <!-- Toggle active role -->
+                    <label class="select">
+                        <span class="label">View page as:</span>
+                        <select bind:value={activeRole}>
+                            <option value="buyer">Buyer</option>
+                            <option value="seller">Seller</option>
+                        </select>
+                    </label>
+                {/if}
+
+                {#if activeRole === 'seller'}
                     <a href="/seller/dashboard" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/seller/dashboard') ? 'bg-blue-700 text-white' : ''}">
                         Dashboard
                     </a>
@@ -185,7 +199,7 @@
                 {/if}
 
                 <!-- Cart button (buyers only) -->
-                {#if !userRole || userRole === 'buyer'}
+                {#if !activeRole || activeRole === 'buyer'}
                     <a 
                         href="/cart" 
                         class="btn btn-ghost btn-circle text-white hover:text-white hover:bg-blue-700 {isActive('/cart') ? 'bg-blue-700 text-white' : ''}"
@@ -261,28 +275,24 @@
             {#if userRole === 'seller'}
                 <li><a href="/seller/dashboard" class="{isActive('/seller/dashboard') ? 'active' : ''}">Dashboard</a></li>
                 <li><a href="/seller/products" class="{isActive('/seller/products') ? 'active' : ''}">My Products</a></li>
-                <li><a href="/seller/competitors" class="{isActive('/seller/competitors') ? 'active' : ''}">Competitors</a></li>
+                <li><a href="/seller/competitors" class="{isActive('/seller/competitors') ? 'active' : ''} mb-4">Competitors</a></li>
+            {/if}
+            <!-- Buyer links - visible to everyone -->
+            <li><a href="/marketplace" class="{isActive('/marketplace') ? 'active' : ''}">Marketplace</a></li>
+            <li><a href="/compare" class="{isActive('/compare') ? 'active' : ''}">Compare</a></li>
+            <li><a href="/bookmarks" class="{isActive('/bookmarks') ? 'active' : ''}">Bookmarks</a></li>
+            <li><a href="/orders" class="{isActive('/orders') ? 'active' : ''}">Orders</a></li>
+            <li><a href="/cart" class="{isActive('/cart') ? 'active' : ''}">
+                Cart {#if cartItemCount > 0}<span class="badge badge-sm">{cartItemCount}</span>{/if}
+            </a></li>
+            <li><a href="/dashboard" class="{isActive('/dashboard') ? 'active' : ''}">Dashboard</a></li>
+            
+            {#if user}
                 <li class="mt-4">
                     <button type="button" onclick={handleSignOut} class="w-full text-left">Sign Out</button>
                 </li>
             {:else}
-                <!-- Buyer links - visible to everyone -->
-                <li><a href="/marketplace" class="{isActive('/marketplace') ? 'active' : ''}">Marketplace</a></li>
-                <li><a href="/compare" class="{isActive('/compare') ? 'active' : ''}">Compare</a></li>
-                <li><a href="/bookmarks" class="{isActive('/bookmarks') ? 'active' : ''}">Bookmarks</a></li>
-                <li><a href="/orders" class="{isActive('/orders') ? 'active' : ''}">Orders</a></li>
-                <li><a href="/cart" class="{isActive('/cart') ? 'active' : ''}">
-                    Cart {#if cartItemCount > 0}<span class="badge badge-sm">{cartItemCount}</span>{/if}
-                </a></li>
-                <li><a href="/dashboard" class="{isActive('/dashboard') ? 'active' : ''}">Dashboard</a></li>
-                
-                {#if user}
-                    <li class="mt-4">
-                        <button type="button" onclick={handleSignOut} class="w-full text-left">Sign Out</button>
-                    </li>
-                {:else}
-                    <li class="mt-4"><a href="/auth/signin" class="btn btn-primary">Sign In</a></li>
-                {/if}
+                <li class="mt-4"><a href="/auth/signin" class="btn btn-primary">Sign In</a></li>
             {/if}
         </ul>
     </div>
