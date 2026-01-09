@@ -168,35 +168,39 @@
                     <a href="/seller/competitors" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/seller/competitors') ? 'bg-blue-700 text-white' : ''}">
                         Competitors
                     </a>
+                {:else}
+                    <!-- Buyer links - visible to everyone, will redirect to signin if not authenticated -->
+                    <a href="/compare" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/compare') ? 'bg-blue-700 text-white' : ''}">
+                        Compare
+                    </a>
+                    <a href="/bookmarks" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/bookmarks') ? 'bg-blue-700 text-white' : ''}">
+                        Bookmarks
+                    </a>
+                    <a href="/orders" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/orders') ? 'bg-blue-700 text-white' : ''}">
+                        Orders
+                    </a>
+                    <a href="/dashboard" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/dashboard') ? 'bg-blue-700 text-white' : ''}">
+                        Dashboard
+                    </a>
                 {/if}
-                <!-- Buyer links - visible to everyone, will redirect to signin if not authenticated -->
-                <a href="/compare" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/compare') ? 'bg-blue-700 text-white' : ''}">
-                    Compare
-                </a>
-                <a href="/bookmarks" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/bookmarks') ? 'bg-blue-700 text-white' : ''}">
-                    Bookmarks
-                </a>
-                <a href="/orders" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/orders') ? 'bg-blue-700 text-white' : ''}">
-                    Orders
-                </a>
-                <a href="/dashboard" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/dashboard') ? 'bg-blue-700 text-white' : ''}">
-                    Dashboard
-                </a>
-                <!-- Cart button -->
-                <a 
-                    href="/cart" 
-                    class="btn btn-ghost btn-circle text-white hover:text-white hover:bg-blue-700 {isActive('/cart') ? 'bg-blue-700 text-white' : ''}"
-                    aria-label="Shopping cart{cartItemCount > 0 ? `, ${cartItemCount} items` : ''}"
-                >
-                    <div class="indicator">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        {#if cartItemCount > 0}
-                            <span class="badge badge-sm indicator-item" aria-hidden="true">{cartItemCount}</span>
-                        {/if}
-                    </div>
-                </a>
+
+                <!-- Cart button (buyers only) -->
+                {#if !userRole || userRole === 'buyer'}
+                    <a 
+                        href="/cart" 
+                        class="btn btn-ghost btn-circle text-white hover:text-white hover:bg-blue-700 {isActive('/cart') ? 'bg-blue-700 text-white' : ''}"
+                        aria-label="Shopping cart{cartItemCount > 0 ? `, ${cartItemCount} items` : ''}"
+                    >
+                        <div class="indicator">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            {#if cartItemCount > 0}
+                                <span class="badge badge-sm indicator-item" aria-hidden="true">{cartItemCount}</span>
+                            {/if}
+                        </div>
+                    </a>
+                {/if}
 
                 <!-- User menu -->
                 {#if user}
@@ -258,26 +262,27 @@
                 <li><a href="/seller/dashboard" class="{isActive('/seller/dashboard') ? 'active' : ''}">Dashboard</a></li>
                 <li><a href="/seller/products" class="{isActive('/seller/products') ? 'active' : ''}">My Products</a></li>
                 <li><a href="/seller/competitors" class="{isActive('/seller/competitors') ? 'active' : ''}">Competitors</a></li>
-                <!--<li class="mt-4">
-                    <button type="button" onclick={handleSignOut} class="w-full text-left">Sign Out</button>
-                </li>-->
-            {/if}
-            <!-- Buyer links - visible to everyone -->
-            <li><a href="/marketplace" class="{isActive('/marketplace') ? 'active' : ''}">Marketplace</a></li>
-            <li><a href="/compare" class="{isActive('/compare') ? 'active' : ''}">Compare</a></li>
-            <li><a href="/bookmarks" class="{isActive('/bookmarks') ? 'active' : ''}">Bookmarks</a></li>
-            <li><a href="/orders" class="{isActive('/orders') ? 'active' : ''}">Orders</a></li>
-            <li><a href="/cart" class="{isActive('/cart') ? 'active' : ''}">
-                Cart {#if cartItemCount > 0}<span class="badge badge-sm">{cartItemCount}</span>{/if}
-            </a></li>
-            <li><a href="/dashboard" class="{isActive('/dashboard') ? 'active' : ''}">Dashboard</a></li>
-            
-            {#if user}
                 <li class="mt-4">
                     <button type="button" onclick={handleSignOut} class="w-full text-left">Sign Out</button>
                 </li>
             {:else}
-                <li class="mt-4"><a href="/auth/signin" class="btn btn-primary">Sign In</a></li>
+                <!-- Buyer links - visible to everyone -->
+                <li><a href="/marketplace" class="{isActive('/marketplace') ? 'active' : ''}">Marketplace</a></li>
+                <li><a href="/compare" class="{isActive('/compare') ? 'active' : ''}">Compare</a></li>
+                <li><a href="/bookmarks" class="{isActive('/bookmarks') ? 'active' : ''}">Bookmarks</a></li>
+                <li><a href="/orders" class="{isActive('/orders') ? 'active' : ''}">Orders</a></li>
+                <li><a href="/cart" class="{isActive('/cart') ? 'active' : ''}">
+                    Cart {#if cartItemCount > 0}<span class="badge badge-sm">{cartItemCount}</span>{/if}
+                </a></li>
+                <li><a href="/dashboard" class="{isActive('/dashboard') ? 'active' : ''}">Dashboard</a></li>
+                
+                {#if user}
+                    <li class="mt-4">
+                        <button type="button" onclick={handleSignOut} class="w-full text-left">Sign Out</button>
+                    </li>
+                {:else}
+                    <li class="mt-4"><a href="/auth/signin" class="btn btn-primary">Sign In</a></li>
+                {/if}
             {/if}
         </ul>
     </div>
