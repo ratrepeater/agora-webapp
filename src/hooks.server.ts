@@ -19,19 +19,21 @@ export const handle: Handle = async ({ event, resolve }) => {
         }
     });
 
-    // retrieve current session
+    // retrieve current user (more secure than getSession)
     const {
-        data: { session }
-    } = await event.locals.supabase.auth.getSession();
+        data: { user },
+        error: userError
+    } = await event.locals.supabase.auth.getUser();
 
-    event.locals.session = session;
+    // create session-like object for compatibility
+    event.locals.session = user ? { user } : null;
 
     // fetch user role from profiles table if authenticated
-    if (session) {
+    if (user && !userError) {
         const { data: profile } = await event.locals.supabase
             .from('profiles')
             .select('role_buyer, role_seller')
-            .eq('id', session.user.id)
+            .eq('id', user.id)
             .single();
 
         // seller role takes precedence when user has both roles

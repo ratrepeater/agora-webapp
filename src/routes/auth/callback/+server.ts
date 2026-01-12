@@ -14,10 +14,16 @@ export const GET: RequestHandler = async ({ url, locals }) => {
             throw redirect(303, '/auth/signin?error=auth_failed');
         }
 
-        // Get the session to check if profile exists
+        // Get the user to check if profile exists
         const {
-            data: { session }
-        } = await locals.supabase.auth.getSession();
+            data: { user },
+            error: userError
+        } = await locals.supabase.auth.getUser();
+
+        if (userError) {
+            console.error('Error getting user:', userError);
+            throw redirect(303, '/auth/signin?error=auth_failed');
+        }
 
         // Profile is created automatically by database trigger
         // No need to manually check or create profile here
@@ -27,26 +33,26 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
     const supabase = locals.supabase;
 
-    // Get the session from the URL hash
-    const { data, error: authError } = await supabase.auth.getSession();
+    // Get the user from the authenticated session
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError) {
         throw authError;
     }
 
-    if (data.session) {
+    if (user) {
         // Check if profile exists
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('id')
-            .eq('id', data.session.user.id)
+            .eq('id', user.id)
             .single();
 
         // If no profile exists, create one (for OAuth users)
         if (profileError || !profile) {
             const { error: insertError } = await supabase.from('profiles').insert({
-                id: data.session.user.id,
-                full_name: data.session.user.user_metadata.full_name || data.session.user.user_metadata.name || '',
+                id: user.id,
+                full_name: user.user_metadata.full_name || user.user_metadata.name || '',
                 role_buyer: true,
                 role_seller: false
             });
@@ -56,7 +62,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
             }
         }
     } else {
-        throw new Error('No session found');
+        throw new Error('No user found');
     }
 
     throw redirect(303, redirectTo);

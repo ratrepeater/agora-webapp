@@ -113,7 +113,18 @@ export class AuthService {
 		}
 	}
 
-	// get the current session
+	// get the current user (more secure than getSession)
+	async getUser() {
+		const { data, error } = await this.supabase.auth.getUser();
+
+		if (error) {
+			throw new Error(error.message);
+		}
+
+		return data.user;
+	}
+
+	// get the current session (deprecated - use getUser instead)
 	async getSession() {
 		const { data, error } = await this.supabase.auth.getSession();
 
@@ -145,10 +156,10 @@ export class AuthService {
 
 	// check if the current user has a specific role
 	async hasRole(role: UserRole): Promise<boolean> {
-		const session = await this.getSession();
-		if (!session) return false;
+		const user = await this.getUser();
+		if (!user) return false;
 
-		const userRole = await this.getUserRole(session.user.id);
+		const userRole = await this.getUserRole(user.id);
 		return userRole === role;
 	}
 
