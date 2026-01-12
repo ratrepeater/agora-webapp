@@ -1,15 +1,37 @@
 <script lang="ts">
     import { enhance } from '$app/forms';
     import { page } from '$app/stores';
-    import { supabase } from '$lib/helpers/supabase.client';
-    import { AuthService } from '$lib/services/auth';
-    import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
     import type { ActionData } from './$types';
 
     let { form }: { form: ActionData } = $props();
-    const authService = new AuthService(supabase);
-
+    
     let error = $derived(form?.error || '');
+    
+    async function handleOAuthSignIn(provider: 'google' | 'github') {
+        try {
+            const redirectTo = $page.url.searchParams.get('redirectTo');
+            
+            const response = await fetch('/api/auth/oauth', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ provider, redirectTo })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                error = data.error;
+                return;
+            }
+
+            // Redirect to OAuth provider
+            window.location.href = data.url;
+        } catch (e: any) {
+            error = e.message;
+        }
+    }
     
     // Get feature name from redirectTo parameter
     const featureName = $derived(() => {
@@ -90,9 +112,7 @@
                 <button
                     type="button"
                     class="btn btn-outline w-full"
-                    onclick={() => {
-                        alert('This feature is under development');
-                    }}
+                    onclick={() => handleOAuthSignIn('google')}
                 >
                     <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
                         <path
@@ -118,9 +138,7 @@
                 <button
                     type="button"
                     class="btn btn-outline w-full"
-                    onclick={() => {
-                        alert('This feature is under development');
-                    }}
+                    onclick={() => handleOAuthSignIn('github')}
                 >
                     <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                         <path

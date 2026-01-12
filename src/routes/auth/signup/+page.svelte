@@ -1,16 +1,37 @@
 <script lang="ts">
     import { enhance } from '$app/forms';
-    import { createBrowserClient } from '$lib/helpers/supabase';
-    import { AuthService } from '$lib/services/auth';
-    import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+    import { page } from '$app/stores';
     import type { ActionData } from './$types';
 
     let { form }: { form: ActionData } = $props();
 
-    const supabase = createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
-    const authService = new AuthService(supabase);
-
     let error = $derived(form?.error || '');
+
+    async function handleOAuthSignIn(provider: 'google' | 'github') {
+        try {
+            const redirectTo = $page.url.searchParams.get('redirectTo');
+            
+            const response = await fetch('/api/auth/oauth', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ provider, redirectTo })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                error = data.error;
+                return;
+            }
+
+            // Redirect to OAuth provider
+            window.location.href = data.url;
+        } catch (e: any) {
+            error = e.message;
+        }
+    }
 </script>
 
 <div class="min-h-screen flex items-center justify-center bg-base-200">
@@ -85,13 +106,7 @@
                 <button
                     type="button"
                     class="btn btn-outline w-full"
-                    onclick={async () => {
-                        try {
-                            await authService.signInWithOAuth('google');
-                        } catch (e: any) {
-                            error = e.message;
-                        }
-                    }}
+                    onclick={() => handleOAuthSignIn('google')}
                 >
                     <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
                         <path
@@ -117,13 +132,7 @@
                 <button
                     type="button"
                     class="btn btn-outline w-full"
-                    onclick={async () => {
-                        try {
-                            await authService.signInWithOAuth('github');
-                        } catch (e: any) {
-                            error = e.message;
-                        }
-                    }}
+                    onclick={() => handleOAuthSignIn('github')}
                 >
                     <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                         <path
