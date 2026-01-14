@@ -22,7 +22,8 @@
 		return `$${(priceCents / 100).toFixed(2)}`;
 	}
 
-	function formatDate(dateString: string): string {
+	function formatDate(dateString: string | null): string {
+		if (!dateString) return 'N/A';
 		return new Date(dateString).toLocaleDateString('en-US', {
 			year: 'numeric',
 			month: 'short',
@@ -84,7 +85,7 @@
 					<div class="card-body">
 						<div class="flex gap-4">
 							<!-- Product Image -->
-							<div class="flex-shrink-0">
+							<div class="shrink-0">
 								{#if product.logo_url}
 									<img src={product.logo_url} alt={product.name} class="w-20 h-20 object-cover rounded-lg" />
 								{:else}
@@ -97,7 +98,7 @@
 							</div>
 
 							<!-- Product Info -->
-							<div class="flex-grow">
+							<div class="grow">
 								<div class="flex justify-between items-start">
 									<div>
 										<h3 class="card-title text-xl">
@@ -176,12 +177,25 @@
 			<div class="modal-action">
 				<button type="button" class="btn btn-ghost" onclick={cancelDelete}>Cancel</button>
 				<form method="POST" action="?/delete" use:enhance={() => {
+					console.log('🚀 Form submission started');
+					console.log('Product to delete:', productToDelete);
 					deletingProductId = productToDelete?.id || null;
-					return async ({ update }) => {
+					
+					return async ({ result, update }) => {
+						console.log('📥 Form submission result:', result);
+						
+						if (result.type === 'success') {
+							console.log('✅ Delete successful!');
+						} else if (result.type === 'failure') {
+							console.error('❌ Delete failed:', result.data);
+						}
+						
 						await update();
 						deletingProductId = null;
 						showDeleteModal = false;
 						productToDelete = null;
+						
+						console.log('🔄 UI updated, modal closed');
 					};
 				}}>
 					<input type="hidden" name="productId" value={productToDelete.id} />
@@ -200,6 +214,6 @@
 				</form>
 			</div>
 		</div>
-		<div class="modal-backdrop" onclick={cancelDelete}></div>
+		<button type="button" class="modal-backdrop" onclick={cancelDelete} aria-label="Close modal"></button>
 	</div>
 {/if}

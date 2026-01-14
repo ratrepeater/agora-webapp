@@ -1,7 +1,7 @@
 // type definitions for the application
 // includes database table types, extended types with relations, and business logic types
 
-import type { Tables } from './database.types';
+import type { Tables } from '../database.types';
 export type Product = Tables<'products'>;
 export type Profile = Tables<'profiles'>;
 // review type with correct column names (database has title and body, not review_text)

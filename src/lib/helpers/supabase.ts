@@ -2,7 +2,7 @@
 // creates properly configured clients for server-side and browser contexts
 
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from './database.types';
+import type { Database } from '../database.types';
 
 // creates a server-side supabase client without session persistence
 // use in +page.server.ts, +layout.server.ts, and api endpoints

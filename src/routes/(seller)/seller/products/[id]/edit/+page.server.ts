@@ -11,7 +11,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const productId = params.id;
 
 	// Fetch the product
-	const product = await productService.getById(productId);
+	const product = await productService.getByIdForOwnership(productId);
 
 	if (!product) {
 		throw error(404, 'Product not found');
@@ -66,7 +66,7 @@ export const actions: Actions = {
 		const productId = params.id;
 
 		// Verify the product belongs to this seller
-		const existingProduct = await productService.getById(productId);
+		const existingProduct = await productService.getByIdForOwnership(productId);
 		if (!existingProduct || existingProduct.seller_id !== locals.session.user.id) {
 			return fail(403, { error: 'You do not have permission to edit this product' });
 		}

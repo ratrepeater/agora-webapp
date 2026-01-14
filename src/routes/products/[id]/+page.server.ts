@@ -15,6 +15,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
             .from('products')
             .select('*')
             .eq('id', productId)
+            .eq('status', 'published')
             .single();
 
         if (productError) {
