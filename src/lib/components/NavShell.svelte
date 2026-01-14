@@ -164,7 +164,7 @@
                 {#if userRole === 'seller'}
                     <!-- Toggle active role -->
                     <label class="select">
-                        <span class="label">View page as:</span>
+                        <span class="label">View site as:</span>
                         <select bind:value={activeRole}>
                             <option value="buyer">Buyer</option>
                             <option value="seller">Seller</option>
