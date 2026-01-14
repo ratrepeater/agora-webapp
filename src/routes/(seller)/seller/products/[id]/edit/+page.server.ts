@@ -1,6 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { supabase } from '$lib/helpers/supabase.server';
 import { productService } from '$lib/services/products';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -23,13 +22,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}
 
 	// Fetch categories for the dropdown
-	const { data: categories } = await supabase
+	const { data: categories } = await locals.supabase
 		.from('categories')
 		.select('id, key, name, description')
 		.order('name');
 
 	// Fetch product metrics
-	const { data: metricValues } = await supabase
+	const { data: metricValues } = await locals.supabase
 		.from('product_metric_values')
 		.select(`
 			metric_id,
@@ -161,7 +160,7 @@ export const actions: Actions = {
 				const fileName = `${crypto.randomUUID()}.${fileExt}`;
 				const filePath = `logos/${fileName}`;
 
-				const { error: uploadError } = await supabase.storage
+				const { error: uploadError } = await locals.supabase.storage
 					.from('product-images')
 					.upload(filePath, logoFile, {
 						contentType: logoFile.type,
@@ -174,7 +173,7 @@ export const actions: Actions = {
 				}
 
 				// Get public URL
-				const { data: urlData } = supabase.storage
+				const { data: urlData } = locals.supabase.storage
 					.from('product-images')
 					.getPublicUrl(filePath);
 
@@ -188,7 +187,7 @@ export const actions: Actions = {
 				const fileName = `${crypto.randomUUID()}.${fileExt}`;
 				const filePath = `demo-visuals/${fileName}`;
 
-				const { error: uploadError } = await supabase.storage
+				const { error: uploadError } = await locals.supabase.storage
 					.from('product-images')
 					.upload(filePath, demoVisualFile, {
 						contentType: demoVisualFile.type,
@@ -201,28 +200,42 @@ export const actions: Actions = {
 				}
 
 				// Get public URL
-				const { data: urlData } = supabase.storage
+				const { data: urlData } = locals.supabase.storage
 					.from('product-images')
 					.getPublicUrl(filePath);
 
 				demo_visual_url = urlData.publicUrl;
 			}
 
-			// Update product in database
-			await productService.update(productId, {
-				name: name!,
-				short_description: short_description!,
-				long_description: long_description!,
-				category_id: category_id!,
-				price_cents: Math.round(price * 100),
-				logo_url,
-				demo_visual_url,
-				is_featured
-			});
+			// Update product in database using authenticated client
+			console.log('🔄 Updating product:', productId);
+			
+			const { data: updatedProduct, error: updateError } = await locals.supabase
+				.from('products')
+				.update({
+					name: name!,
+					short_description: short_description!,
+					long_description: long_description!,
+					category_id: category_id!,
+					price_cents: Math.round(price * 100),
+					logo_url,
+					demo_visual_url,
+					is_featured
+				})
+				.eq('id', productId)
+				.select()
+				.single();
+
+			if (updateError) {
+				console.error('❌ Product update error:', updateError);
+				return fail(500, { error: `Failed to update product: ${updateError.message}` });
+			}
+
+			console.log('✅ Product updated successfully:', updatedProduct);
 
 			// Update metrics in product_metric_values table
 			// First, delete existing metrics
-			await supabase
+			await locals.supabase
 				.from('product_metric_values')
 				.delete()
 				.eq('product_id', productId);
@@ -231,7 +244,7 @@ export const actions: Actions = {
 			const metricInserts = [];
 
 			// Get metric definitions
-			const { data: metrics } = await supabase
+			const { data: metrics } = await locals.supabase
 				.from('metric_definitions')
 				.select('id, code')
 				.in('code', [
@@ -294,7 +307,7 @@ export const actions: Actions = {
 			}
 
 			if (metricInserts.length > 0) {
-				const { error: metricsError } = await supabase
+				const { error: metricsError } = await locals.supabase
 					.from('product_metric_values')
 					.insert(metricInserts);
 
@@ -305,7 +318,10 @@ export const actions: Actions = {
 			}
 
 			// Redirect to products list on success
-			throw redirect(303, '/seller/products');
+			return {
+				success: true,
+				redirect: '/seller/products',
+			}
 		} catch (error) {
 			// If it's a redirect, re-throw it
 			if (error instanceof Response && error.status === 303) {

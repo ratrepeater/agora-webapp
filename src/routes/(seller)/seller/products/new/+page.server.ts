@@ -1,11 +1,9 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { supabase } from '$lib/helpers/supabase.server';
-import { productService } from '$lib/services/products';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
 	// Fetch categories for the dropdown
-	const { data: categories, error } = await supabase
+	const { data: categories, error } = await locals.supabase
 		.from('categories')
 		.select('id, key, name, description')
 		.order('name');
@@ -119,7 +117,7 @@ export const actions: Actions = {
 				const fileName = `${crypto.randomUUID()}.${fileExt}`;
 				const filePath = `logos/${fileName}`;
 
-				const { error: uploadError } = await supabase.storage
+				const { error: uploadError } = await locals.supabase.storage
 					.from('product-images')
 					.upload(filePath, logoFile, {
 						contentType: logoFile.type,
@@ -132,7 +130,7 @@ export const actions: Actions = {
 				}
 
 				// Get public URL
-				const { data: urlData } = supabase.storage
+				const { data: urlData } = locals.supabase.storage
 					.from('product-images')
 					.getPublicUrl(filePath);
 
@@ -146,7 +144,7 @@ export const actions: Actions = {
 				const fileName = `${crypto.randomUUID()}.${fileExt}`;
 				const filePath = `demo-visuals/${fileName}`;
 
-				const { error: uploadError } = await supabase.storage
+				const { error: uploadError } = await locals.supabase.storage
 					.from('product-images')
 					.upload(filePath, demoVisualFile, {
 						contentType: demoVisualFile.type,
@@ -159,33 +157,46 @@ export const actions: Actions = {
 				}
 
 				// Get public URL
-				const { data: urlData } = supabase.storage
+				const { data: urlData } = locals.supabase.storage
 					.from('product-images')
 					.getPublicUrl(filePath);
 
 				demo_visual_url = urlData.publicUrl;
 			}
 
-			// Create product in database
-			const product = await productService.create({
-				seller_id: locals.session.user.id,
-				name: name!,
-				short_description: short_description!,
-				long_description: long_description!,
-				category_id: category_id!,
-				price_cents: Math.round(price * 100),
-				logo_url,
-				demo_visual_url,
-				is_featured,
-				status: 'published'
-			});
+			// Create product in database using authenticated client
+			console.log('➕ Creating new product');
+			
+			const { data: product, error: createError } = await locals.supabase
+				.from('products')
+				.insert({
+					seller_id: locals.session.user.id,
+					name: name!,
+					short_description: short_description!,
+					long_description: long_description!,
+					category_id: category_id!,
+					price_cents: Math.round(price * 100),
+					logo_url,
+					demo_visual_url,
+					is_featured,
+					status: 'published'
+				})
+				.select()
+				.single();
+
+			if (createError) {
+				console.error('❌ Product creation error:', createError);
+				return fail(500, { error: `Failed to create product: ${createError.message}` });
+			}
+
+			console.log('✅ Product created successfully:', product);
 
 			// Store metrics in product_metric_values table if provided
 			if (product.id) {
 				const metricInserts = [];
 
 				// Get metric definitions
-				const { data: metrics } = await supabase
+				const { data: metrics } = await locals.supabase
 					.from('metric_definitions')
 					.select('id, code')
 					.in('code', [
@@ -248,7 +259,7 @@ export const actions: Actions = {
 				}
 
 				if (metricInserts.length > 0) {
-					const { error: metricsError } = await supabase
+					const { error: metricsError } = await locals.supabase
 						.from('product_metric_values')
 						.insert(metricInserts);
 
