@@ -228,7 +228,14 @@
         <!-- Spending by Category -->
         {#if dashboard.spending_by_category.length > 0}
             {@const total = dashboard.spending_by_category.reduce((sum, cat) => sum + cat.amount, 0)}
-            {@const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']}
+            {@const colors = [
+                'hsl(var(--p))',
+                'hsl(var(--s))',
+                'hsl(var(--a))',
+                'hsl(var(--er))',
+                'hsl(var(--in))',
+                'hsl(var(--wa))'
+            ]}
             {@const segments = dashboard.spending_by_category.map((cat, i) => ({
                 ...cat,
                 percentage: (cat.amount / total) * 100,

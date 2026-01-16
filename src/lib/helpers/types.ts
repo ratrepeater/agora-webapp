@@ -164,6 +164,7 @@ export type QuoteStatus = 'pending' | 'sent' | 'accepted' | 'rejected' | 'expire
 export interface ProductWithRating extends Product {
     average_rating: number;
     review_count: number;
+    category: string | null; // Category key from enrichWithRatings
 }
 
 // score breakdown structure

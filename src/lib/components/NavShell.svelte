@@ -92,10 +92,10 @@
     <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
     <div class="drawer-content flex flex-col">
         <!-- Navbar -->
-        <div class="navbar bg-blue-800 shadow-lg sticky top-0 z-40 w-full text-white">
+        <div class="navbar glass shadow-lg sticky top-0 z-40 w-full">
             <!-- Mobile menu button -->
             <div class="flex-none lg:hidden">
-                <label for="my-drawer-2" aria-label="Open navigation menu" class="btn btn-square btn-ghost text-white hover:text-white hover:bg-blue-700">
+                <label for="my-drawer-2" aria-label="Open navigation menu" class="btn btn-square btn-ghost">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -115,7 +115,7 @@
 
             <!-- Logo -->
             <div class="inline-flex justify-start">
-                <a href="/" class="btn btn-ghost text-xl mr-3 text-white hover:text-blue-200 hover:bg-blue-700" aria-label="AGORA Home">
+                <a href="/" class="btn btn-ghost text-xl mr-3" aria-label="AGORA Home">
                     <img src={favicon} alt="" class="h-8 w-8" aria-hidden="true" />
                     AGORA
                 </a>
@@ -123,8 +123,8 @@
 
             <!-- Search bar (desktop only) -->
             <div class="grow-5 ml-10 mr-10 hidden lg:inline-flex" role="search">
-                <div class="join w-full [&>*]:!border-b-0">
-                    <label class="input w-full join-item !border-b-0">
+                <div class="join w-full">
+                    <label class="input w-full join-item">
                         <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
                             <g
                                 stroke-linejoin="round"
@@ -147,15 +147,15 @@
                         />
                     </label>
                     <select 
-                        class="select join-item w-30 bg-white text-gray-900 [&>option]:text-gray-900 !border-b-0" 
+                        class="select join-item w-30" 
                         bind:value={selectedCategory}
                         aria-label="Filter by category"
                     >
                         {#each categories as category}
-                            <option value={category} class="text-gray-900">{category}</option>
+                            <option value={category} class="text-neutral-content">{category}</option>
                         {/each}
                     </select>
-                    <button class="btn bg-blue-600 hover:bg-blue-700 text-white !border-0 join-item focus:outline-none" onclick={handleSearch} aria-label="Search">Browse</button>
+                    <button class="btn btn-info btn-soft join-item focus:outline-none" onclick={handleSearch} aria-label="Search">Browse</button>
                 </div>
             </div>
 
@@ -173,27 +173,27 @@
                 {/if}
 
                 {#if activeRole === 'seller'}
-                    <a href="/seller/dashboard" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/seller/dashboard') ? 'bg-blue-700 text-white' : ''}">
+                    <a href="/seller/dashboard" class="btn btn-ghost {isActive('/seller/dashboard') ? 'btn-active' : ''}">
                         Dashboard
                     </a>
-                    <a href="/seller/products" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/seller/products') ? 'bg-blue-700 text-white' : ''}">
+                    <a href="/seller/products" class="btn btn-ghost {isActive('/seller/products') ? 'btn-active' : ''}">
                         My Products
                     </a>
-                    <a href="/seller/competitors" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/seller/competitors') ? 'bg-blue-700 text-white' : ''}">
+                    <a href="/seller/competitors" class="btn btn-ghost {isActive('/seller/competitors') ? 'btn-active' : ''}">
                         Competitors
                     </a>
                 {:else}
                     <!-- Buyer links - visible to everyone, will redirect to signin if not authenticated -->
-                    <a href="/compare" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/compare') ? 'bg-blue-700 text-white' : ''}">
+                    <a href="/compare" class="btn btn-ghost {isActive('/compare') ? 'btn-active' : ''}">
                         Compare
                     </a>
-                    <a href="/bookmarks" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/bookmarks') ? 'bg-blue-700 text-white' : ''}">
+                    <a href="/bookmarks" class="btn btn-ghost {isActive('/bookmarks') ? 'btn-active' : ''}">
                         Bookmarks
                     </a>
-                    <a href="/orders" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/orders') ? 'bg-blue-700 text-white' : ''}">
+                    <a href="/orders" class="btn btn-ghost {isActive('/orders') ? 'btn-active' : ''}">
                         Orders
                     </a>
-                    <a href="/dashboard" class="btn btn-ghost text-white hover:text-white hover:bg-blue-700 {isActive('/dashboard') ? 'bg-blue-700 text-white' : ''}">
+                    <a href="/dashboard" class="btn btn-ghost {isActive('/dashboard') ? 'btn-active' : ''}">
                         Dashboard
                     </a>
                 {/if}
@@ -202,7 +202,7 @@
                 {#if !activeRole || activeRole === 'buyer'}
                     <a 
                         href="/cart" 
-                        class="btn btn-ghost btn-circle text-white hover:text-white hover:bg-blue-700 {isActive('/cart') ? 'bg-blue-700 text-white' : ''}"
+                        class="btn btn-ghost btn-circle {isActive('/cart') ? 'btn-active' : ''}"
                         aria-label="Shopping cart{cartItemCount > 0 ? `, ${cartItemCount} items` : ''}"
                     >
                         <div class="indicator">
@@ -222,30 +222,30 @@
                         <div 
                             tabindex="0" 
                             role="button" 
-                            class="btn btn-ghost btn-circle avatar text-white hover:text-white"
+                            class="btn btn-ghost btn-circle avatar"
                             aria-label="User menu"
                             aria-haspopup="true"
                         >
-                            <div class="w-10 rounded-full bg-blue-700 flex items-center justify-center">
+                            <div class="w-10 rounded-full bg-primary flex items-center justify-center">
                                 <span class="text-lg font-semibold text-white" aria-hidden="true">{user.email[0].toUpperCase()}</span>
                             </div>
                         </div>
                         <ul
                             tabindex="-1"
                             role="menu"
-                            class="menu menu-sm dropdown-content bg-white rounded-box z-[1] mt-3 w-52 p-2 shadow-xl"
+                            class="menu menu-sm dropdown-content bg-base-200 rounded-box z-1 mt-3 w-52 p-2 shadow-xl"
                             aria-label="User menu options"
                         >
                             <li class="menu-title">
-                                <span class="text-gray-700">{user.email}</span>
+                                <span class="text-neutral-content">{user.email}</span>
                             </li>
                             <li role="menuitem">
-                                <button type="button" onclick={handleSignOut} class="w-full text-left text-gray-900 hover:bg-blue-50">Sign Out</button>
+                                <button type="button" onclick={handleSignOut} class="w-full text-left text-neutral-content hover:bg-primary/10">Sign Out</button>
                             </li>
                         </ul>
                     </div>
                 {:else}
-                    <a href="/auth/signin" class="btn bg-blue-600 hover:bg-blue-700 text-white border-0">Sign In</a>
+                    <a href="/auth/signin" class="btn btn-primary border-0">Sign In</a>
                 {/if}
             </div>
         </div>

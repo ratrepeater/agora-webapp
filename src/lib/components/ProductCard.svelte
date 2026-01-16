@@ -46,21 +46,21 @@
 		return 'overall_score' in p;
 	}
 
-	// Get color class based on score - refined red/yellow/green gradient
+	// Get color class based on score - refined success/warning/error gradient
 	function getScoreColor(score: number): string {
-		// Green range (80-100): deeper green as score increases
-		if (score >= 90) return 'text-green-600'; // Deep green: 90-100
-		if (score >= 80) return 'text-green-500'; // Standard green: 80-89
+		// Success range (80-100): deeper success as score increases
+		if (score >= 90) return 'text-success'; // Deep success: 90-100
+		if (score >= 80) return 'text-success opacity-90'; // Standard success: 80-89
 		
-		// Yellow range (60-79): slight gradient toward lime (high) and orange (low)
-		if (score >= 75) return 'text-lime-500'; // Lime-ish: 75-79
-		if (score >= 70) return 'text-yellow-500'; // Standard yellow: 70-74
-		if (score >= 60) return 'text-orange-400'; // Orange-ish: 60-69
+		// Warning range (60-79): gradient from warning to error
+		if (score >= 75) return 'text-warning'; // Warning-ish: 75-79
+		if (score >= 70) return 'text-warning opacity-90'; // Standard warning: 70-74
+		if (score >= 60) return 'text-warning opacity-80'; // Warning-ish: 60-69
 		
-		// Red range (0-59): darker red as score decreases
-		if (score >= 50) return 'text-red-500'; // Standard red: 50-59
-		if (score >= 30) return 'text-red-600'; // Darker red: 30-49
-		return 'text-red-700'; // Very dark red: 0-29
+		// Error range (0-59): darker error as score decreases
+		if (score >= 50) return 'text-error'; // Standard error: 50-59
+		if (score >= 30) return 'text-error opacity-90'; // Darker error: 30-49
+		return 'text-error opacity-80'; // Very dark error: 0-29
 	}
 
 	function handleCompare(e: MouseEvent | KeyboardEvent) {
@@ -216,25 +216,25 @@
 				<div class="stat bg-base-200 rounded-lg p-2">
 					<div class="stat-title text-xs">Overall</div>
 					<div class="stat-value text-lg">
-						<span class="{getScoreColor(product.overall_score || 0)}">{product.overall_score || 0}</span><span class="text-xs text-gray-400 ml-0.5">/100</span>
+						<span class="{getScoreColor(product.overall_score || 0)}">{product.overall_score || 0}</span><span class="text-xs text-base-content/40 ml-0.5">/100</span>
 					</div>
 				</div>
 				<div class="stat bg-base-200 rounded-lg p-2">
 					<div class="stat-title text-xs">Fit</div>
 					<div class="stat-value text-lg">
-						<span class="{getScoreColor(product.fit_score || 0)}">{product.fit_score || 0}</span><span class="text-xs text-gray-400 ml-0.5">/100</span>
+						<span class="{getScoreColor(product.fit_score || 0)}">{product.fit_score || 0}</span><span class="text-xs text-base-content/40 ml-0.5">/100</span>
 					</div>
 				</div>
 				<div class="stat bg-base-200 rounded-lg p-2">
 					<div class="stat-title text-xs">Features</div>
 					<div class="stat-value text-lg">
-						<span class="{getScoreColor(product.feature_score || 0)}">{product.feature_score || 0}</span><span class="text-xs text-gray-400 ml-0.5">/100</span>
+						<span class="{getScoreColor(product.feature_score || 0)}">{product.feature_score || 0}</span><span class="text-xs text-base-content/40 ml-0.5">/100</span>
 					</div>
 				</div>
 				<div class="stat bg-base-200 rounded-lg p-2">
 					<div class="stat-title text-xs">Integration</div>
 					<div class="stat-value text-lg">
-						<span class="{getScoreColor(product.integration_score || 0)}">{product.integration_score || 0}</span><span class="text-xs text-gray-400 ml-0.5">/100</span>
+						<span class="{getScoreColor(product.integration_score || 0)}">{product.integration_score || 0}</span><span class="text-xs text-base-content/40 ml-0.5">/100</span>
 					</div>
 				</div>
 			</div>
@@ -262,7 +262,7 @@
 			{#if showCompareButton}
 				<button
 					class="btn btn-sm {isCompared
-						? 'btn-primary bg-blue-600 border-blue-600 hover:bg-blue-700'
+						? 'btn-primary'
 						: 'btn-outline'}"
 					onclick={handleCompare}
 					aria-label="{isCompared ? 'Product is being compared' : 'Compare'} {product.name}"
@@ -288,7 +288,7 @@
 			{#if showBookmarkButton}
 				<button
 					class="btn btn-sm transition-all {isBookmarked
-						? 'btn-primary bg-blue-600 border-blue-600 hover:bg-blue-700'
+						? 'btn-primary'
 						: 'btn-outline'}"
 					style="transition-duration: 300ms;"
 					onclick={handleBookmark}
@@ -318,7 +318,7 @@
 				{#if showAddedMessage}
 					<!-- "Added!" message -->
 					<button
-						class="btn btn-sm btn-success bg-green-600 border-green-600"
+						class="btn btn-sm btn-success"
 						disabled
 						aria-label="Added to cart"
 					>

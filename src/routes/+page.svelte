@@ -243,12 +243,12 @@
 </script>
 
 <!-- Animated Page Background -->
-<div class="fixed inset-0 -z-10 bg-gradient-to-br from-blue-700 via-blue-800 to-blue-900">
+<div class="fixed inset-0 -z-10 bg-linear-to-br from-base-100 via-base-200 to-base-300">
     <!-- Animated circles (static position, only pulse) -->
-    <div class="absolute top-10 left-10 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl animate-pulse"></div>
-    <div class="absolute top-40 right-20 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
-    <div class="absolute bottom-20 left-1/4 w-72 h-72 bg-blue-600/18 rounded-full blur-3xl animate-pulse" style="animation-delay: 2s;"></div>
-    <div class="absolute bottom-40 right-1/3 w-56 h-56 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style="animation-delay: 1.5s;"></div>
+    <div class="absolute top-10 left-10 w-64 h-64 bg-primary/20 rounded-full blur-3xl animate-pulse"></div>
+    <div class="absolute top-40 right-20 w-80 h-80 bg-primary/15 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+    <div class="absolute bottom-20 left-1/4 w-72 h-72 bg-primary/18 rounded-full blur-3xl animate-pulse" style="animation-delay: 2s;"></div>
+    <div class="absolute bottom-40 right-1/3 w-56 h-56 bg-primary/20 rounded-full blur-3xl animate-pulse" style="animation-delay: 1.5s;"></div>
     
     <!-- Dynamic Particles - More concentrated on sides (circles and squares only) -->
     <!-- Left side particles (0-15%) -->
@@ -354,11 +354,11 @@
         <!-- Content -->
         <div class="hero-content text-center relative z-10 py-16">
             <div class="max-w-3xl">
-                <h1 class="text-6xl font-bold mb-6 text-white leading-tight">The Marketplace for Startup Services</h1>
-                <p class="text-2xl mb-8 text-white/90">
+                <h1 class="text-6xl font-bold mb-6 leading-tight text-neutral-50">The Marketplace for Startup Services</h1>
+                <p class="text-2xl mb-8">
                     Discover, compare, and purchase the best business services for your startup
                 </p>
-                <button class="btn btn-lg bg-blue-600 hover:bg-blue-700 text-white border-0 px-8 shadow-xl hover:shadow-2xl transition-all" onclick={() => goto('/marketplace')}>
+                <button class="btn btn-primary btn-lg border-0 px-8 shadow-xl hover:shadow-2xl transition-all" onclick={() => goto('/marketplace')}>
                     Browse Marketplace
                 </button>
             </div>
@@ -534,6 +534,6 @@
 
     /* Interaction effect - particles glow when near each other */
     .particle:hover {
-        filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+        filter: drop-shadow(0 0 8px hsl(var(--bc) / 0.8));
     }
 </style>
